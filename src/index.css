@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@plugin 'tailwind-scrollbar';
+
+
+  .bgOp {
+    background-color: rgba(14, 13, 13, 0.5);
+  }
+
+
+  @import "leaflet/dist/leaflet.css";
+  
+
+
+
+
+/* src/index.css or your global CSS file */
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
+
+
+
+
+
+  .restaurant-marker {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+
+.bgOp {
+    background-color: rgba(14, 13, 13, 0.5);
+  }
+
+
+
+  
+
+.custom-marker-agent {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.custom-marker-agent div {
+  transition: all 0.3s ease;
+}
+
+
+
+
+
+
+.map-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: white;
+  padding: 10px;
+  z-index: 1;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
+
+
+
+@keyframes stockChange {
+  0% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+  50% {
+    transform: scale(1.1);
+    background-color: rgba(74, 222, 128, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+}
+
+.stock-change-animation {
+  animation: stockChange 0.8s ease-out;
+}
+
+

@@ -11,7 +11,7 @@ import {
 } from "../../../apis/adminApis/storeApi";
 import AddServiceModal from "./AddServiceModal";
 import PolygonMap from "./PolygonMap";
-import MapComponent from "./Mapcomponent";
+import MapComponent from "./MapComponent";
 const MerchantDetailsPage = () => {
   const [deliveryMode, setDeliveryMode] = useState(
     "Home delivery/Pick And Drop"

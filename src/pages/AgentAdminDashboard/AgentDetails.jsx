@@ -319,7 +319,7 @@ export default function AgentDetails() {
       >
         {/* Header with back button */}
 <div className="flex items-center">
-  <Link to="/admin/agent-slider/agent/list">
+  <Link to="/oradoadmin/admin/agent-slider/agent/list">
     <motion.button
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}

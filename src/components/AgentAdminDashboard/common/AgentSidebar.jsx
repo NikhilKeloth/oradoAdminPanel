@@ -57,7 +57,7 @@ const AgentSidebar = ({ isOpen, toggleSidebar }) => {
           {/* Dashboard */}
           <div className="mb-1">
             <Link 
-              to="/admin/agent-slider" 
+              to="/oradoadmin/admin/agent-slider" 
               className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
               onClick={handleLinkClick}
             >
@@ -81,49 +81,49 @@ const AgentSidebar = ({ isOpen, toggleSidebar }) => {
             {expandedSections.agents && (
               <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
                 <Link 
-                  to="/admin/agent-slider/agent/approval" 
+                  to="/oradoadmin/admin/agent-slider/agent/approval" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Agent Approvals
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/agent/list" 
+                  to="/oradoadmin/admin/agent-slider/agent/list" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Agent List
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/agent-selfie" 
+                  to="/oradoadmin/admin/agent-slider/agent-selfie" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Agent Selfie Logs
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/agent-payout" 
+                  to="/oradoadmin/admin/agent-slider/agent-payout" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Agent Payouts
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/agent-cod-limit" 
+                  to="/oradoadmin/admin/agent-slider/agent-cod-limit" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Agent COD Monitoring
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/agent-leave" 
+                  to="/oradoadmin/admin/agent-slider/agent-leave" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Agent Leave Approvals
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/warnings-termination" 
+                  to="/oradoadmin/admin/agent-slider/warnings-termination" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
@@ -136,7 +136,7 @@ const AgentSidebar = ({ isOpen, toggleSidebar }) => {
           {/* Allocation Methods */}
           <div className="mb-1">
             <Link 
-              to="/admin/agent-slider/settings/allocation-method" 
+              to="/oradoadmin/admin/agent-slider/settings/allocation-method" 
               className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
               onClick={handleLinkClick}
             >
@@ -148,7 +148,7 @@ const AgentSidebar = ({ isOpen, toggleSidebar }) => {
           {/* Earnings Settings */}
           <div className="mb-1">
             <Link 
-              to="/admin/agent-slider/agent-earnings-settings" 
+              to="/oradoadmin/admin/agent-slider/agent-earnings-settings" 
               className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
               onClick={handleLinkClick}
             >
@@ -172,21 +172,21 @@ const AgentSidebar = ({ isOpen, toggleSidebar }) => {
             {expandedSections.settings && (
               <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
                 <Link 
-                  to="/admin/agent-slider/theme-settings" 
+                  to="/oradoadmin/admin/agent-slider/theme-settings" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Theme Settings
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/settings/incentive-plan" 
+                  to="/oradoadmin/admin/agent-slider/settings/incentive-plan" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >
                   Incentive Plans
                 </Link>
                 <Link 
-                  to="/admin/agent-slider/settings/milestone" 
+                  to="/oradoadmin/admin/agent-slider/settings/milestone" 
                   className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
                   onClick={handleLinkClick}
                 >

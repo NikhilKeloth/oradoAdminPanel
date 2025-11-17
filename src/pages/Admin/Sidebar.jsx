@@ -1,11 +1,10 @@
-
-import React, { useState } from 'react';
-import { 
-  FiHome, 
-  FiList, 
-  FiCalendar, 
-  FiShoppingBag, 
-  FiUsers, 
+import React, { useState, useEffect } from 'react';
+import {
+  FiHome,
+  FiList,
+  FiCalendar,
+  FiShoppingBag,
+  FiUsers,
   FiPieChart,
   FiTag,
   FiMail,
@@ -22,9 +21,12 @@ import { CiDeliveryTruck } from "react-icons/ci";
 import { MdDeliveryDining, MdOutlineLocalOffer } from "react-icons/md";
 import { GrUserAdmin, GrUser } from "react-icons/gr";
 import { TicketCheck, Receipt, SquareGanttChart } from "lucide-react";
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const location = useLocation();
   const [expandedSections, setExpandedSections] = useState({
+    getStarted: true,
     dashboard: false,
     approvals: false,
     restaurants: false,
@@ -39,695 +41,1495 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     transactions: false,
     taxDelivery: false,
     configure: false,
-    settings: false
+    settings: false,
+    merchants: false,
+    promotions: false,
+    campaigns: false,
+    orderSettings: false,
+    generalSettings: false,
+    cityConfig: false
   });
 
+  const topLevelSections = ['getStarted', 'marketing', 'surge', 'admins', 'configure', 'settings'];
+
   const toggleSection = (section) => {
+    setExpandedSections(prev => {
+      const newState = { ...prev };
+      const isCurrentlyExpanded = !!newState[section];
+      
+      if (isCurrentlyExpanded) {
+        newState[section] = false;
+      } else {
+        if (topLevelSections.includes(section)) {
+          topLevelSections.forEach(key => {
+            newState[key] = false;
+          });
+          ['merchants', 'customers', 'promotions', 'campaigns', 'orderSettings', 'generalSettings', 'cityConfig'].forEach(subKey => {
+            newState[subKey] = false;
+          });
+        }
+        newState[section] = true;
+      }
+      return newState;
+    });
+  };
+
+  const toggleSubSection = (section) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
   };
 
+  const isActivePath = (path) => {
+    if (path === '' && location.pathname === '/admin/dashboard') return true;
+    return location.pathname.includes(path);
+  };
+
+  const isLinkActive = (linkPath) => {
+    if (linkPath === '' && location.pathname === '/admin/dashboard') return true;
+    if (linkPath && location.pathname.includes(linkPath)) return true;
+    return false;
+  };
+
+  useEffect(() => {
+    const path = location.pathname;
+   
+    const newExpandedState = { ...expandedSections };
+   
+    if (path.includes('/admin/dashboard/analytics')) {
+      newExpandedState.getStarted = true;
+    }
+    if (path.includes('restaurant-approvals') || path.includes('approvals')) {
+      newExpandedState.approvals = true;
+    }
+    if (path.includes('restaurant-') || path.includes('products')) {
+      newExpandedState.restaurants = true;
+      newExpandedState.getStarted = true;
+    }
+    if (path.includes('marketing') || path.includes('promotions') || path.includes('campaigns')) {
+      newExpandedState.marketing = true;
+    }
+    if (path.includes('surge')) {
+      newExpandedState.surge = true;
+    }
+    if (path.includes('admin-') && (path.includes('add') || path.includes('manage'))) {
+      newExpandedState.admins = true;
+    }
+    if (path.includes('user-') || path.includes('customer')) {
+      newExpandedState.customers = true;
+      newExpandedState.getStarted = true;
+    }
+    if (path.includes('merchants')) {
+      newExpandedState.merchants = true;
+      newExpandedState.getStarted = true;
+    }
+    if (path.includes('configure') || path.includes('settings') || path.includes('commission') || path.includes('taxes') || path.includes('deliveryfee') || path.includes('city') || path.includes('geofence')) {
+      newExpandedState.configure = true;
+    }
+    if (path.includes('order/table')) {
+      newExpandedState.getStarted = true;
+    }
+
+    setExpandedSections(newExpandedState);
+  }, [location.pathname]);
+
+  const styles = {
+    sidebar: {
+      background: 'linear-gradient(180deg, #FC8019 0%, #E67300 100%)',
+      color: '#FFFFFF',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      boxShadow: '8px 0 25px rgba(252, 128, 25, 0.4)',
+      borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+    },
+    logoSection: {
+      padding: '20px 16px',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)'
+    },
+    logo: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      fontWeight: '800',
+      fontSize: '20px',
+      letterSpacing: '-0.01em'
+    },
+    logoIcon: {
+      width: '36px',
+      height: '36px',
+      background: '#FFFFFF',
+      borderRadius: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      border: '2px solid rgba(255, 255, 255, 0.8)'
+    },
+    logoText: {
+      color: '#FFFFFF',
+      fontWeight: '700',
+      textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+    },
+    panelTitle: {
+      padding: '12px 16px',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+      background: 'rgba(255, 255, 255, 0.05)'
+    },
+    panelBadge: {
+      background: 'rgba(255, 255, 255, 0.9)',
+      color: '#FC8019',
+      borderRadius: '8px',
+      padding: '6px 12px',
+      textAlign: 'center',
+      fontSize: '12px',
+      fontWeight: '700',
+      letterSpacing: '0.5px',
+      textTransform: 'uppercase',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(255, 255, 255, 0.3)'
+    },
+    scrollContainer: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '12px 0',
+      '&::-webkit-scrollbar': {
+        width: '4px'
+      },
+      '&::-webkit-scrollbar-track': {
+        background: 'rgba(255, 255, 255, 0.1)'
+      },
+      '&::-webkit-scrollbar-thumb': {
+        background: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: '2px'
+      }
+    },
+    menuSection: {
+      marginBottom: '6px'
+    },
+    sectionHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '12px 16px',
+      background: 'rgba(255, 255, 255, 0.1)',
+      color: '#FFFFFF',
+      borderRadius: '8px',
+      margin: '0 8px 4px 8px',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      fontSize: '14px',
+      fontWeight: '600'
+    },
+    sectionHeaderHover: {
+      background: 'rgba(255, 255, 255, 0.15)',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+    },
+    sectionHeaderActive: {
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderLeft: '3px solid #FFFFFF'
+    },
+    sectionContent: {
+      marginLeft: '20px',
+      marginTop: '4px'
+    },
+    menuItem: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '10px 16px',
+      color: '#FFFFFF',
+      textDecoration: 'none',
+      transition: 'all 0.2s ease',
+      borderRadius: '8px',
+      margin: '2px 8px',
+      cursor: 'pointer',
+      background: 'rgba(255, 255, 255, 0.08)',
+      border: '1px solid rgba(255, 255, 255, 0.05)',
+      fontSize: '14px'
+    },
+    menuItemHover: {
+      background: 'rgba(255, 255, 255, 0.15)',
+      transform: 'translateX(3px)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+    },
+    menuItemActive: {
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderLeft: '3px solid #FFFFFF',
+      transform: 'translateX(3px)'
+    },
+    subMenu: {
+      background: 'rgba(255, 255, 255, 0.95)',
+      color: '#FC8019',
+      borderRadius: '8px',
+      marginTop: '4px',
+      padding: '6px 0',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(252, 128, 25, 0.2)',
+      backdropFilter: 'blur(10px)'
+    },
+    subMenuItem: {
+      display: 'block',
+      padding: '8px 16px',
+      color: '#666666',
+      textDecoration: 'none',
+      transition: 'all 0.15s ease',
+      borderRadius: '6px',
+      margin: '1px 6px',
+      fontSize: '13px',
+      fontWeight: '500'
+    },
+    subMenuItemHover: {
+      color: '#FC8019',
+      background: 'rgba(252, 128, 25, 0.08)',
+      transform: 'translateX(2px)'
+    },
+    subMenuItemActive: {
+      color: '#FC8019',
+      background: 'rgba(252, 128, 25, 0.12)',
+      fontWeight: '600'
+    },
+    icon: {
+      marginRight: '10px',
+      fontSize: '16px',
+      minWidth: '20px',
+      textAlign: 'center',
+      opacity: '0.9'
+    },
+    navText: {
+      fontSize: '13px',
+      fontWeight: '500',
+      flex: 1
+    },
+    logoutSection: {
+      borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+      padding: '16px',
+      background: 'rgba(255, 255, 255, 0.05)'
+    },
+    logoutButton: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      color: '#FFFFFF',
+      background: 'rgba(255, 255, 255, 0.1)',
+      transition: 'all 0.2s ease',
+      borderRadius: '8px',
+      padding: '12px 14px',
+      cursor: 'pointer',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      fontSize: '14px',
+      fontWeight: '500'
+    },
+    logoutButtonHover: {
+      background: 'rgba(255, 255, 255, 0.15)',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-[#FC8019] text-white">
-      {/* Logo */}
-      <div className="p-5 border-b border-orange-200 flex items-center">
-        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3">
-          <span className="text-[#FC8019] font-bold text-lg">O</span>
+    <div style={styles.sidebar}>
+      <div style={styles.logoSection}>
+        <div style={styles.logo}>
+          <div style={styles.logoIcon}>
+            <span style={{ color: '#FC8019', fontWeight: 'bold', fontSize: '16px' }}>O</span>
+          </div>
+          <span style={styles.logoText}>ORADO Admin</span>
         </div>
-        <h2 className="text-xl font-bold">ORADO Admin</h2>
       </div>
 
-      {/* Panel Title */}
-      <div className="p-3 border-b border-orange-200">
-        <div className="bg-orange-500 text-white rounded-lg p-2 text-center text-sm font-medium">
+      <div style={styles.panelTitle}>
+        <div style={styles.panelBadge}>
           Admin Panel
         </div>
       </div>
 
-      {/* Single scrollable container for all content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="py-4 space-y-1 px-2">
-          {/* Dashboard */}
-          <div className="mb-1">
-            <Link 
-              to="" 
-              className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+      <div style={styles.scrollContainer}>
+        <div style={{ padding: '6px 0' }}>
+          <div style={styles.menuSection}>
+            <div
+              style={{
+                ...styles.sectionHeader,
+                ...(expandedSections.getStarted ? styles.sectionHeaderActive : {})
+              }}
+              onClick={() => toggleSection('getStarted')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.sectionHeaderHover.background;
+                e.currentTarget.style.transform = styles.sectionHeaderHover.transform;
+                e.currentTarget.style.boxShadow = styles.sectionHeaderHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = expandedSections.getStarted ?
+                  styles.sectionHeaderActive.background : styles.sectionHeader.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <FiPieChart className="mr-3" />
-              <span>Dashboard</span>
-            </Link>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <FiHome style={styles.icon} />
+                <span style={{ ...styles.navText, fontWeight: '600' }}>Get Started</span>
+              </div>
+              {expandedSections.getStarted ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+            </div>
+            {expandedSections.getStarted && (
+              <div style={styles.sectionContent}>
+                <Link
+                  to=""
+                  style={styles.menuItem}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = styles.menuItemHover.background;
+                    e.currentTarget.style.transform = styles.menuItemHover.transform;
+                    e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = isLinkActive('') ?
+                      styles.menuItemActive.background : styles.menuItem.background;
+                    e.currentTarget.style.transform = isLinkActive('') ?
+                      styles.menuItemActive.transform : 'none';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <FiHome style={styles.icon} />
+                  <span style={styles.navText}>Home</span>
+                </Link>
+
+                <Link
+                  to="order/table"
+                  style={{
+                    ...styles.menuItem,
+                    ...(isLinkActive('order/table') ? styles.menuItemActive : {})
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLinkActive('order/table')) {
+                      e.currentTarget.style.background = styles.menuItemHover.background;
+                      e.currentTarget.style.transform = styles.menuItemHover.transform;
+                      e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLinkActive('order/table')) {
+                      e.currentTarget.style.background = styles.menuItem.background;
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <CiDeliveryTruck style={styles.icon} />
+                  <span style={styles.navText}>Orders</span>
+                </Link>
+
+                <div style={styles.menuSection}>
+                  <div
+                    style={{
+                      ...styles.menuItem,
+                      ...(isLinkActive('merchants') || isLinkActive('restaurant-') ? styles.menuItemActive : {})
+                    }}
+                    onClick={() => toggleSubSection('merchants')}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('merchants') && !isLinkActive('restaurant-')) {
+                        e.currentTarget.style.background = styles.menuItemHover.background;
+                        e.currentTarget.style.transform = styles.menuItemHover.transform;
+                        e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('merchants') && !isLinkActive('restaurant-')) {
+                        e.currentTarget.style.background = styles.menuItem.background;
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    <FiUsers style={styles.icon} />
+                    <span style={styles.navText}>Merchants</span>
+                    {expandedSections.merchants ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+                  </div>
+                  {expandedSections.merchants && (
+                    <div style={styles.subMenu}>
+                      <Link
+                        to="restaurant-table"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('restaurant-table') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('restaurant-table')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('restaurant-table')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        All Restaurants
+                      </Link>
+                      <Link
+                        to="restaurant-add"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('restaurant-add') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('restaurant-add')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('restaurant-add')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Add Restaurant
+                      </Link>
+                      <Link
+                        to="restaurant-approvals"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('restaurant-approvals') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('restaurant-approvals')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('restaurant-approvals')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Restaurant Approvals
+                      </Link>
+                      <Link
+                        to="restaurant-chats"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('restaurant-chats') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('restaurant-chats')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('restaurant-chats')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Restaurant Chats
+                      </Link>
+                      <Link
+                        to="restaurant-feedback"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('restaurant-feedback') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('restaurant-feedback')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('restaurant-feedback')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Restaurant Reviews
+                      </Link>
+                      <Link
+                        to="merchants-permission"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('merchants-permission') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('merchants-permission')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('merchants-permission')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Permission Management
+                      </Link>
+                      <Link
+                        to="restaurant-permission"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('restaurant-permission') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('restaurant-permission')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('restaurant-permission')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Restaurant Permission
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.menuSection}>
+                  <div
+                    style={{
+                      ...styles.menuItem,
+                      ...(isLinkActive('user-') || isLinkActive('customer') ? styles.menuItemActive : {})
+                    }}
+                    onClick={() => toggleSubSection('customers')}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('user-') && !isLinkActive('customer')) {
+                        e.currentTarget.style.background = styles.menuItemHover.background;
+                        e.currentTarget.style.transform = styles.menuItemHover.transform;
+                        e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('user-') && !isLinkActive('customer')) {
+                        e.currentTarget.style.background = styles.menuItem.background;
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    <GrUser style={styles.icon} />
+                    <span style={styles.navText}>Customers</span>
+                    {expandedSections.customers ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+                  </div>
+                  {expandedSections.customers && (
+                    <div style={styles.subMenu}>
+                      <Link
+                        to="user-managemnet"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('user-managemnet') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('user-managemnet')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('user-managemnet')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Customer Management
+                      </Link>
+                      <Link
+                        to="admin-customer-chat"
+                        style={{
+                          ...styles.subMenuItem,
+                          ...(isLinkActive('admin-customer-chat') ? styles.subMenuItemActive : {})
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isLinkActive('admin-customer-chat')) {
+                            e.currentTarget.style.color = styles.subMenuItemHover.color;
+                            e.currentTarget.style.background = styles.subMenuItemHover.background;
+                            e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLinkActive('admin-customer-chat')) {
+                            e.currentTarget.style.color = styles.subMenuItem.color;
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.transform = 'none';
+                          }
+                        }}
+                      >
+                        Customer Chats
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <Link
+                  to="/admin/dashboard/analytics/order"
+                  style={{
+                    ...styles.menuItem,
+                    ...(isLinkActive('analytics') ? styles.menuItemActive : {})
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLinkActive('analytics')) {
+                      e.currentTarget.style.background = styles.menuItemHover.background;
+                      e.currentTarget.style.transform = styles.menuItemHover.transform;
+                      e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLinkActive('analytics')) {
+                      e.currentTarget.style.background = styles.menuItem.background;
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <FiPieChart style={styles.icon} />
+                  <span style={styles.navText}>Analytics</span>
+                </Link>
+              </div>
+            )}
           </div>
 
-
-
-          <div className="mb-1">
-            <a 
-              href="/admin/agent-slider" 
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+          <div style={styles.menuSection}>
+            <a
+              href="/oradoadmin/admin/agent-slider"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.menuItem}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.menuItemHover.background;
+                e.currentTarget.style.transform = styles.menuItemHover.transform;
+                e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = styles.menuItem.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <FiPieChart className="mr-3" />
-              <span>Agent Dashboard</span>
+              <FiPieChart style={styles.icon} />
+              <span style={styles.navText}>Agent Dashboard</span>
             </a>
           </div>
 
-          {/* Approvals */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-              onClick={() => toggleSection('approvals')}
-            >
-              <div className="flex items-center">
-                <FiClipboard className="mr-3" />
-                <span>Approvals</span>
-              </div>
-              {expandedSections.approvals ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-            </div>
-            {expandedSections.approvals && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="restaurant-approvals" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Restaurant Approvals
-                </Link>
-                {/* <Link 
-                  to="#" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Agent Approvals
-                </Link> */}
-              </div>
-            )}
-          </div>
-
-          {/* Restaurants */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-              onClick={() => toggleSection('restaurants')}
-            >
-              <div className="flex items-center">
-                <FiHome className="mr-3" />
-                <span>Restaurants</span>
-              </div>
-              {expandedSections.restaurants ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-            </div>
-            {expandedSections.restaurants && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="restaurant-add" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Add Restaurants
-                </Link>
-                <Link 
-                  to="restaurant-table" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  All Restaurants
-                </Link>
-                {/* <Link 
-                  to="restaurant-createmenu" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Create Menu
-                </Link> */}
-                <Link 
-                  to="restaurant-permission" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Restaurant Permission
-                </Link>
-                {/* <Link 
-                  to="restaurant-commission" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Restaurant Commission
-                </Link>
-                <Link 
-                  to="restaurant-earnings" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Restaurant Earnings
-                </Link> */}
-                <Link 
-                  to="restaurant-feedback" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Restaurant Reviews
-                </Link>
-                <Link 
-                  to="restaurant-chats" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Restaurant Chats
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Offers */}
-          {/* <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-              onClick={() => toggleSection('offers')}
-            >
-              <div className="flex items-center">
-                <MdOutlineLocalOffer className="mr-3" />
-                <span>Offers</span>
-              </div>
-              {expandedSections.offers ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-            </div>
-            {expandedSections.offers && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="create-offer" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Create Offers
-                </Link>
-                <Link 
-                  to="assign-offer" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Assign Offer
-                </Link>
-                <Link 
-                  to="manage-offer" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Offer Management
-                </Link>
-              </div>
-            )}
-          </div> */}
-
-          {/* Orders */}
-          <div className="mb-1">
-            <Link 
-              to="order/table" 
-              className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-            >
-              <CiDeliveryTruck className="mr-3" />
-              <span>Orders</span>
-            </Link>
-          </div>
-
-
-
-          {/* Analytics */}
-<Link 
-  to="/admin/dashboard/analytics/order"
-  className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
->
-  <FiPieChart className="mr-3" />
-  <span>Analytics</span>
-</Link>
-
-
-          {/* Marketing */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+          <div style={styles.menuSection}>
+            <div
+              style={{
+                ...styles.sectionHeader,
+                ...(isLinkActive('marketing') || isLinkActive('promotions') || isLinkActive('campaigns') ? styles.sectionHeaderActive : {})
+              }}
               onClick={() => toggleSection('marketing')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.sectionHeaderHover.background;
+                e.currentTarget.style.transform = styles.sectionHeaderHover.transform;
+                e.currentTarget.style.boxShadow = styles.sectionHeaderHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = (isLinkActive('marketing') || isLinkActive('promotions') || isLinkActive('campaigns')) ?
+                  styles.sectionHeaderActive.background : styles.sectionHeader.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <div className="flex items-center">
-                <SquareGanttChart className="mr-3" size={18} />
-                <span>Marketing</span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <SquareGanttChart style={styles.icon} size={16} />
+                <span style={{ ...styles.navText, fontWeight: '600' }}>Marketing</span>
               </div>
-              {expandedSections.marketing ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+              {expandedSections.marketing ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
             </div>
             {expandedSections.marketing && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <div className="mb-2">
-                  <div 
-                    className="flex justify-between items-center px-4 py-2 hover:text-[#FC8019] hover:bg-orange-50 rounded cursor-pointer"
-                    onClick={() => toggleSection('promotions')}
-                  >
-                    <span>Promotions</span>
-                    {expandedSections.promotions ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </div>
-                  {expandedSections.promotions && (
-                    <div className="ml-4 mt-1">
-                      <Link 
-                        to="admin-promotions-promo" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Promo codes
-                      </Link>
-
-
-  <Link 
-                        to="promotions-offer" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                     Offer
-                      </Link>
-
-
-
-
-
-
-
-
-                       
-                      <Link 
-                        to="promotion-loyalty-points" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Loyalty Points
-                      </Link>
-                      <Link 
-                        to="promotion-referal" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Referral
-                      </Link>
+              <div style={styles.sectionContent}>
+                <div style={styles.subMenu}>
+                  <div style={styles.menuSection}>
+                    <div
+                      style={{
+                        ...styles.subMenuItem,
+                        ...(isLinkActive('promotions') ? styles.subMenuItemActive : {})
+                      }}
+                      onClick={() => toggleSubSection('promotions')}
+                      onMouseEnter={(e) => {
+                        if (!isLinkActive('promotions')) {
+                          e.currentTarget.style.color = styles.subMenuItemHover.color;
+                          e.currentTarget.style.background = styles.subMenuItemHover.background;
+                          e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLinkActive('promotions')) {
+                          e.currentTarget.style.color = styles.subMenuItem.color;
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.transform = 'none';
+                        }
+                      }}
+                    >
+                      <span>Promotions</span>
+                      {expandedSections.promotions ? <FiChevronUp size={12} style={{ marginLeft: 'auto' }} /> : <FiChevronDown size={12} style={{ marginLeft: 'auto' }} />}
                     </div>
-                  )}
-                </div>
-                <div className="mb-2">
-                  <div 
-                    className="flex justify-between items-center px-4 py-2 hover:text-[#FC8019] hover:bg-orange-50 rounded cursor-pointer"
-                    onClick={() => toggleSection('campaigns')}
-                  >
-                    <span>Push Campaigns</span>
-                    {expandedSections.campaigns ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+                    {expandedSections.promotions && (
+                      <div style={{ marginLeft: '12px', marginTop: '2px' }}>
+                        <Link
+                          to="admin-promotions-promo"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('admin-promotions-promo') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('admin-promotions-promo')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('admin-promotions-promo')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Promo codes
+                        </Link>
+                        <Link
+                          to="promotions-offer"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('promotions-offer') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('promotions-offer')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('promotions-offer')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Offer
+                        </Link>
+                        <Link
+                          to="promotion-loyalty-points"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('promotion-loyalty-points') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('promotion-loyalty-points')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('promotion-loyalty-points')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Loyalty Points
+                        </Link>
+                        <Link
+                          to="promotion-referal"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('promotion-referal') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('promotion-referal')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('promotion-referal')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Referral
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                  {expandedSections.campaigns && (
-
-
-
-                    <div className="ml-4 mt-1">
-                      <Link 
-                        to="/admin/dashboard/campaigns-pushnotification" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                               Push notifcation
-                      </Link>
-                
+                  <div style={styles.menuSection}>
+                    <div
+                      style={{
+                        ...styles.subMenuItem,
+                        ...(isLinkActive('campaigns') ? styles.subMenuItemActive : {})
+                      }}
+                      onClick={() => toggleSubSection('campaigns')}
+                      onMouseEnter={(e) => {
+                        if (!isLinkActive('campaigns')) {
+                          e.currentTarget.style.color = styles.subMenuItemHover.color;
+                          e.currentTarget.style.background = styles.subMenuItemHover.background;
+                          e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLinkActive('campaigns')) {
+                          e.currentTarget.style.color = styles.subMenuItem.color;
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.transform = 'none';
+                        }
+                      }}
+                    >
+                      <span>Push Campaigns</span>
+                      {expandedSections.campaigns ? <FiChevronUp size={12} style={{ marginLeft: 'auto' }} /> : <FiChevronDown size={12} style={{ marginLeft: 'auto' }} />}
                     </div>
-                  )}
+                    {expandedSections.campaigns && (
+                      <div style={{ marginLeft: '12px', marginTop: '2px' }}>
+                        <Link
+                          to="/admin/dashboard/campaigns-pushnotification"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('campaigns-pushnotification') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('campaigns-pushnotification')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('campaigns-pushnotification')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Push notification
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Surge */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+          <div style={styles.menuSection}>
+            <div
+              style={{
+                ...styles.sectionHeader,
+                ...(isLinkActive('surge') ? styles.sectionHeaderActive : {})
+              }}
               onClick={() => toggleSection('surge')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.sectionHeaderHover.background;
+                e.currentTarget.style.transform = styles.sectionHeaderHover.transform;
+                e.currentTarget.style.boxShadow = styles.sectionHeaderHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isLinkActive('surge') ?
+                  styles.sectionHeaderActive.background : styles.sectionHeader.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <div className="flex items-center">
-                <SquareGanttChart className="mr-3" size={18} />
-                <span>Surge</span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <SquareGanttChart style={styles.icon} size={16} />
+                <span style={{ ...styles.navText, fontWeight: '600' }}>Surge</span>
               </div>
-              {expandedSections.surge ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+              {expandedSections.surge ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
             </div>
             {expandedSections.surge && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="admin-surge" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                > 
-                  Surge Selector
-                </Link>
-                <Link 
-                  to="admin-surge-list" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  List Surge
-                </Link>
+              <div style={styles.sectionContent}>
+                <div style={styles.subMenu}>
+                  <Link
+                    to="admin-surge"
+                    style={{
+                      ...styles.subMenuItem,
+                      ...(isLinkActive('admin-surge') ? styles.subMenuItemActive : {})
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('admin-surge')) {
+                        e.currentTarget.style.color = styles.subMenuItemHover.color;
+                        e.currentTarget.style.background = styles.subMenuItemHover.background;
+                        e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('admin-surge')) {
+                        e.currentTarget.style.color = styles.subMenuItem.color;
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'none';
+                      }
+                    }}
+                  >
+                    Surge Selector
+                  </Link>
+                  <Link
+                    to="admin-surge-list"
+                    style={{
+                      ...styles.subMenuItem,
+                      ...(isLinkActive('admin-surge-list') ? styles.subMenuItemActive : {})
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('admin-surge-list')) {
+                        e.currentTarget.style.color = styles.subMenuItemHover.color;
+                        e.currentTarget.style.background = styles.subMenuItemHover.background;
+                        e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('admin-surge-list')) {
+                        e.currentTarget.style.color = styles.subMenuItem.color;
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'none';
+                      }
+                    }}
+                  >
+                    List Surge
+                  </Link>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Agents */}
-          {/* <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-              onClick={() => toggleSection('agents')}
-            >
-              <div className="flex items-center">
-                <MdDeliveryDining className="mr-3" size={18} />
-                <span>Agents</span>
-              </div>
-              {expandedSections.agents ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-            </div>
-            {expandedSections.agents && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="/admin/agent-dashboard" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  View Agents
-                </Link>
-                <Link 
-                  to="#" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Assign Projects
-                </Link>
-              </div>
-            )}
-          </div> */}
-
-          {/* Admins */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+          <div style={styles.menuSection}>
+            <div
+              style={{
+                ...styles.sectionHeader,
+                ...(isLinkActive('admin-') && (isLinkActive('add') || isLinkActive('manage')) ? styles.sectionHeaderActive : {})
+              }}
               onClick={() => toggleSection('admins')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.sectionHeaderHover.background;
+                e.currentTarget.style.transform = styles.sectionHeaderHover.transform;
+                e.currentTarget.style.boxShadow = styles.sectionHeaderHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = (isLinkActive('admin-') && (isLinkActive('add') || isLinkActive('manage'))) ?
+                  styles.sectionHeaderActive.background : styles.sectionHeader.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <div className="flex items-center">
-                <GrUserAdmin className="mr-3" size={18} />
-                <span>Admins</span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <GrUserAdmin style={styles.icon} size={16} />
+                <span style={{ ...styles.navText, fontWeight: '600' }}>Admins</span>
               </div>
-              {expandedSections.admins ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+              {expandedSections.admins ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
             </div>
             {expandedSections.admins && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="admin-add" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Add Admins
-                </Link>
-                <Link 
-                  to="admin-manage" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Manage Admins
-                </Link>
+              <div style={styles.sectionContent}>
+                <div style={styles.subMenu}>
+                  <Link
+                    to="admin-add"
+                    style={{
+                      ...styles.subMenuItem,
+                      ...(isLinkActive('admin-add') ? styles.subMenuItemActive : {})
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('admin-add')) {
+                        e.currentTarget.style.color = styles.subMenuItemHover.color;
+                        e.currentTarget.style.background = styles.subMenuItemHover.background;
+                        e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('admin-add')) {
+                        e.currentTarget.style.color = styles.subMenuItem.color;
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'none';
+                      }
+                    }}
+                  >
+                    Add Admins
+                  </Link>
+                  <Link
+                    to="admin-manage"
+                    style={{
+                      ...styles.subMenuItem,
+                      ...(isLinkActive('admin-manage') ? styles.subMenuItemActive : {})
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('admin-manage')) {
+                        e.currentTarget.style.color = styles.subMenuItemHover.color;
+                        e.currentTarget.style.background = styles.subMenuItemHover.background;
+                        e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('admin-manage')) {
+                        e.currentTarget.style.color = styles.subMenuItem.color;
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'none';
+                      }
+                    }}
+                  >
+                    Manage Admins
+                  </Link>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Customers */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-              onClick={() => toggleSection('customers')}
+          <div style={styles.menuSection}>
+            <Link
+              to="admin-ticket"
+              style={{
+                ...styles.menuItem,
+                ...(isLinkActive('admin-ticket') ? styles.menuItemActive : {})
+              }}
+              onMouseEnter={(e) => {
+                if (!isLinkActive('admin-ticket')) {
+                  e.currentTarget.style.background = styles.menuItemHover.background;
+                  e.currentTarget.style.transform = styles.menuItemHover.transform;
+                  e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLinkActive('admin-ticket')) {
+                  e.currentTarget.style.background = styles.menuItem.background;
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
+              }}
             >
-              <div className="flex items-center">
-                <GrUser className="mr-3" size={18} />
-                <span>Customers</span>
-              </div>
-              {expandedSections.customers ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-            </div>
-            {expandedSections.customers && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="user-managemnet" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Customer Management
-                </Link>
-                <Link 
-                  to="admin-customer-chat" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Customer Chats
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Ticket */}
-          <div className="mb-1">
-            <Link 
-              to="admin-ticket" 
-              className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-            >
-              <TicketCheck className="mr-3" size={18} />
-              <span>Ticket</span>
+              <TicketCheck style={styles.icon} size={16} />
+              <span style={styles.navText}>Ticket</span>
             </Link>
           </div>
 
-          {/* Transactions */}
-          {/* <div className="mb-1">
-            <Link 
-              to="refund/transactions" 
-              className="flex items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-            >
-              <Receipt className="mr-3" size={18} />
-              <span>Transactions</span>
-            </Link>
-          </div> */}
-
-          {/* Tax & Delivery Fee Settings */}
-          {/* <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
-              onClick={() => toggleSection('taxDelivery')}
-            >
-              <div className="flex items-center">
-                <FiSettings className="mr-3" />
-                <span>Tax & Delivery Fee</span>
-              </div>
-              {expandedSections.taxDelivery ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-            </div>
-            {expandedSections.taxDelivery && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="admin-tax-management" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Tax Settings
-                </Link>
-                <Link 
-                  to="admin-deliveryfee-management" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Delivery Fee Settings
-                </Link>
-              </div>
-            )}
-          </div> */}
-
-          {/* Configure */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+          <div style={styles.menuSection}>
+            <div
+              style={{
+                ...styles.sectionHeader,
+                ...(isLinkActive('configure') || isLinkActive('settings') || isLinkActive('commission') || isLinkActive('taxes') || isLinkActive('deliveryfee') || isLinkActive('city') || isLinkActive('geofence') ? styles.sectionHeaderActive : {})
+              }}
               onClick={() => toggleSection('configure')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.sectionHeaderHover.background;
+                e.currentTarget.style.transform = styles.sectionHeaderHover.transform;
+                e.currentTarget.style.boxShadow = styles.sectionHeaderHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = (isLinkActive('configure') || isLinkActive('settings') || isLinkActive('commission') || isLinkActive('taxes') || isLinkActive('deliveryfee') || isLinkActive('city') || isLinkActive('geofence')) ?
+                  styles.sectionHeaderActive.background : styles.sectionHeader.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <div className="flex items-center">
-                <FiSettings className="mr-3" />
-                <span>Configure</span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <FiSettings style={styles.icon} />
+                <span style={{ ...styles.navText, fontWeight: '600' }}>Configure</span>
               </div>
-              {expandedSections.configure ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+              {expandedSections.configure ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
             </div>
             {expandedSections.configure && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                {/* User Settings */}
-                {/* <div className="mb-2">
-                  <div 
-                    className="flex justify-between items-center px-4 py-2 hover:text-[#FC8019] hover:bg-orange-50 rounded cursor-pointer"
-                    onClick={() => toggleSection('userSettings')}
-                  >
-                    <span>User Settings</span>
-                    {expandedSections.userSettings ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </div>
-                  {expandedSections.userSettings && (
-                    <div className="ml-4 mt-1">
-                      <Link 
-                        to="#" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Customer
-                      </Link>
-                      <Link 
-                        to="#" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Restaurants
-                      </Link>
-                      <Link 
-                        to="/admin/dashboard/manger-managment" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Managers
-                      </Link>
-                      <Link 
-                        to="/admin/dashboard/role-management" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Roles
-                      </Link>
+              <div style={styles.sectionContent}>
+                <div style={styles.subMenu}>
+                  <div style={styles.menuSection}>
+                    <div
+                      style={{
+                        ...styles.subMenuItem,
+                        ...(isLinkActive('commission') || isLinkActive('deliveryfee') || isLinkActive('taxes') ? styles.subMenuItemActive : {})
+                      }}
+                      onClick={() => toggleSubSection('orderSettings')}
+                      onMouseEnter={(e) => {
+                        if (!isLinkActive('commission') && !isLinkActive('deliveryfee') && !isLinkActive('taxes')) {
+                          e.currentTarget.style.color = styles.subMenuItemHover.color;
+                          e.currentTarget.style.background = styles.subMenuItemHover.background;
+                          e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLinkActive('commission') && !isLinkActive('deliveryfee') && !isLinkActive('taxes')) {
+                          e.currentTarget.style.color = styles.subMenuItem.color;
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.transform = 'none';
+                        }
+                      }}
+                    >
+                      <span>Order Settings</span>
+                      {expandedSections.orderSettings ? <FiChevronUp size={12} style={{ marginLeft: 'auto' }} /> : <FiChevronDown size={12} style={{ marginLeft: 'auto' }} />}
                     </div>
-                  )}
-                </div> */}
-
-                {/* Order Settings */}
-                <div className="mb-2">
-                  <div 
-                    className="flex justify-between items-center px-4 py-2 hover:text-[#FC8019] hover:bg-orange-50 rounded cursor-pointer"
-                    onClick={() => toggleSection('orderSettings')}
-                  >
-                    <span>Order Settings</span>
-                    {expandedSections.orderSettings ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+                    {expandedSections.orderSettings && (
+                      <div style={{ marginLeft: '12px', marginTop: '2px' }}>
+                        <Link
+                          to="/admin/dashboard/commission/setup"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('commission') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('commission')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('commission')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Commission
+                        </Link>
+                        <Link
+                          to="admin-deliveryfee-management"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('deliveryfee') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('deliveryfee')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('deliveryfee')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Delivery Fee Settings
+                        </Link>
+                        <Link
+                          to="/admin/dashboard/taxes-charges"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('taxes') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('taxes')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('taxes')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Tax,Fee, & Charges
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                  {expandedSections.orderSettings && (
-                    <div className="ml-4 mt-1">
-                      {/* <Link 
-                        to="/admin/dashboard/order/settings" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Order
-                      </Link> */}
-                      {/* <Link 
-                        to="/admin/dashboard/order/cancel-settings" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Cancellation
-                      </Link> */}
-                      {/* <Link 
-                        to="/admin/dashboard/delivery-settings" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Delivery
-                      </Link> */}
-                      <Link 
-                        to="/admin/dashboard/commission/setup" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Commission
-                      </Link>
-
-                        <Link 
-                  to="admin-deliveryfee-management" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Delivery Fee Settings
-                </Link>
-
-
-    <Link 
-                        to="/admin/dashboard/taxes-charges" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                       Tax,Fee, & Charges
-                      </Link>
-
-
-                    </div>  
-                  )}
-                </div>
-
-                {/* General Settings */}
-                <div className="mb-2">
-                  <div 
-                    className="flex justify-between items-center px-4 py-2 hover:text-[#FC8019] hover:bg-orange-50 rounded cursor-pointer"
-                    onClick={() => toggleSection('generalSettings')}
-                  >
-                    <span>General Settings</span>
-                    {expandedSections.generalSettings ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </div>
-                  {expandedSections.generalSettings && (
-                    <div className="ml-4 mt-1">
-                      <Link 
-                        to="/admin/dashboard/general/preference" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Preference
-                      </Link>
-                      <Link 
-                        to="/admin/dashboard/general/terminology" 
-                        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                      >
-                        Terminology
-                      </Link>
+                  <div style={styles.menuSection}>
+                    <div
+                      style={{
+                        ...styles.subMenuItem,
+                        ...(isLinkActive('general') ? styles.subMenuItemActive : {})
+                      }}
+                      onClick={() => toggleSubSection('generalSettings')}
+                      onMouseEnter={(e) => {
+                        if (!isLinkActive('general')) {
+                          e.currentTarget.style.color = styles.subMenuItemHover.color;
+                          e.currentTarget.style.background = styles.subMenuItemHover.background;
+                          e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLinkActive('general')) {
+                          e.currentTarget.style.color = styles.subMenuItem.color;
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.transform = 'none';
+                        }
+                      }}
+                    >
+                      <span>General Settings</span>
+                      {expandedSections.generalSettings ? <FiChevronUp size={12} style={{ marginLeft: 'auto' }} /> : <FiChevronDown size={12} style={{ marginLeft: 'auto' }} />}
                     </div>
-                  )}
+                    {expandedSections.generalSettings && (
+                      <div style={{ marginLeft: '12px', marginTop: '2px' }}>
+                        <Link
+                          to="/admin/dashboard/general/preference"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('preference') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('preference')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('preference')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Preference
+                        </Link>
+                        <Link
+                          to="/admin/dashboard/general/terminology"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('terminology') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('terminology')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('terminology')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Terminology
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                  <div style={styles.menuSection}>
+                    <div
+                      style={{
+                        ...styles.subMenuItem,
+                        ...(isLinkActive('city') || isLinkActive('geofence') ? styles.subMenuItemActive : {})
+                      }}
+                      onClick={() => toggleSubSection('cityConfig')}
+                      onMouseEnter={(e) => {
+                        if (!isLinkActive('city') && !isLinkActive('geofence')) {
+                          e.currentTarget.style.color = styles.subMenuItemHover.color;
+                          e.currentTarget.style.background = styles.subMenuItemHover.background;
+                          e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLinkActive('city') && !isLinkActive('geofence')) {
+                          e.currentTarget.style.color = styles.subMenuItem.color;
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.transform = 'none';
+                        }
+                      }}
+                    >
+                      <span>City Configuration</span>
+                      {expandedSections.cityConfig ? <FiChevronUp size={12} style={{ marginLeft: 'auto' }} /> : <FiChevronDown size={12} style={{ marginLeft: 'auto' }} />}
+                    </div>
+                    {expandedSections.cityConfig && (
+                      <div style={{ marginLeft: '12px', marginTop: '2px' }}>
+                        <Link
+                          to="/admin/dashboard/city/list"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('city') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('city')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('city')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          City Management
+                        </Link>
+                        <Link
+                          to="/admin/dashboard/geofence"
+                          style={{
+                            ...styles.subMenuItem,
+                            ...(isLinkActive('geofence') ? styles.subMenuItemActive : {})
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isLinkActive('geofence')) {
+                              e.currentTarget.style.color = styles.subMenuItemHover.color;
+                              e.currentTarget.style.background = styles.subMenuItemHover.background;
+                              e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isLinkActive('geofence')) {
+                              e.currentTarget.style.color = styles.subMenuItem.color;
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'none';
+                            }
+                          }}
+                        >
+                          Geofence Management
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-
-
-
-
-
-
-
-
-
-
-                {/* Inside the Configure section, after General Settings */}
-<div className="mb-2">
-  <div 
-    className="flex justify-between items-center px-4 py-2 hover:text-[#FC8019] hover:bg-orange-50 rounded cursor-pointer"
-    onClick={() => toggleSection('cityConfig')}
-  >
-    <span>City Configuration</span>
-    {expandedSections.cityConfig ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-  </div>
-  {expandedSections.cityConfig && (
-    <div className="ml-4 mt-1">
-      <Link 
-        to="/admin/dashboard/city/list" 
-        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-      >
-        City Management
-      </Link>
-      <Link 
-        to="/admin/dashboard/geofence" 
-        className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-      >
-        Geofence Management
-      </Link>
-     
-    </div>
-  )}
-</div>
               </div>
             )}
           </div>
 
-          {/* Settings */}
-          <div className="mb-1">
-            <div 
-              className="flex justify-between items-center px-4 py-3 hover:bg-[#f16a4e] text-white rounded-lg mx-2 cursor-pointer"
+          <div style={styles.menuSection}>
+            <div
+              style={{
+                ...styles.sectionHeader,
+                ...(isLinkActive('access-logs') ? styles.sectionHeaderActive : {})
+              }}
               onClick={() => toggleSection('settings')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = styles.sectionHeaderHover.background;
+                e.currentTarget.style.transform = styles.sectionHeaderHover.transform;
+                e.currentTarget.style.boxShadow = styles.sectionHeaderHover.boxShadow;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isLinkActive('access-logs') ?
+                  styles.sectionHeaderActive.background : styles.sectionHeader.background;
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <div className="flex items-center">
-                <FiSettings className="mr-3" />
-                <span>Settings</span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <FiSettings style={styles.icon} />
+                <span style={{ ...styles.navText, fontWeight: '600' }}>Settings</span>
               </div>
-              {expandedSections.settings ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+              {expandedSections.settings ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
             </div>
             {expandedSections.settings && (
-              <div className="ml-6 bg-white text-gray-800 rounded-lg mt-1 py-2">
-                <Link 
-                  to="#" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Edit Profile
-                </Link>
-                <Link 
-                  to="#" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Change Password
-                </Link>
-                <Link 
-                  to="access-logs" 
-                  className="block py-2 px-4 hover:text-[#FC8019] hover:bg-orange-50 rounded"
-                >
-                  Access Logs
-                </Link>
+              <div style={styles.sectionContent}>
+                <div style={styles.subMenu}>
+                  <Link
+                    to="#"
+                    style={styles.subMenuItem}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = styles.subMenuItemHover.color;
+                      e.currentTarget.style.background = styles.subMenuItemHover.background;
+                      e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = styles.subMenuItem.color;
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.transform = 'none';
+                    }}
+                  >
+                    Edit Profile
+                  </Link>
+                  <Link
+                    to="#"
+                    style={styles.subMenuItem}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = styles.subMenuItemHover.color;
+                      e.currentTarget.style.background = styles.subMenuItemHover.background;
+                      e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = styles.subMenuItem.color;
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.transform = 'none';
+                    }}
+                  >
+                    Change Password
+                  </Link>
+                  <Link
+                    to="access-logs"
+                    style={{
+                      ...styles.subMenuItem,
+                      ...(isLinkActive('access-logs') ? styles.subMenuItemActive : {})
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLinkActive('access-logs')) {
+                        e.currentTarget.style.color = styles.subMenuItemHover.color;
+                        e.currentTarget.style.background = styles.subMenuItemHover.background;
+                        e.currentTarget.style.transform = styles.subMenuItemHover.transform;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLinkActive('access-logs')) {
+                        e.currentTarget.style.color = styles.subMenuItem.color;
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'none';
+                      }
+                    }}
+                  >
+                    Access Logs
+                  </Link>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Logout */}
-        <div className="border-t border-orange-200 p-4">
-          <div className="flex items-center justify-between text-white hover:bg-orange-500 transition-all duration-200 cursor-pointer rounded-lg p-3">
-            <div className="flex items-center">
-              <FiLogOut size={18} />
-              <span className="ml-3 font-medium">Logout</span>
+        <div style={styles.logoutSection}>
+          <div
+            style={styles.logoutButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = styles.logoutButtonHover.background;
+              e.currentTarget.style.transform = styles.logoutButtonHover.transform;
+              e.currentTarget.style.boxShadow = styles.logoutButtonHover.boxShadow;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = styles.logoutButton.background;
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <FiLogOut size={16} />
+              <span style={{ ...styles.navText, marginLeft: '10px' }}>Logout</span>
             </div>
           </div>
         </div>

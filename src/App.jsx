@@ -7,6 +7,7 @@ import RequireAdminAuth from "./components/auth/RequireAdminAuth";
 import RequireManagerAuth from "./components/auth/RequireManagerAuth";
 import Login from "./pages/Auth/Login";
 import Home from "./pages/Home/Home";
+import MerchantsPermission from "./pages/Admin/Merchants/Permission";
 
 import AddToCart from "./pages/AddToCart/AddToCart";
 import OrderManagement from "./pages/OrderManagement/OrderManagement";
@@ -138,6 +139,9 @@ import PushNotificationPanel from "./pages/Admin/Marketing/pushCampaigns/PushNot
 import AgentDashboardLayout from "./layouts/AgentDashboardLayout";
 import AgentAdminPayout from "./pages/AgentAdminDashboard/AgentAdminPayout";
 import DetailedOrderTable from "./pages/Admin/Analytics/DetailedOrderTable";
+// In your App.js or routing file
+// import CreateOrderPage from './pages/Admin/order/CreateOrderPage';
+import CreateOrderPage from "./pages/Admin/order/CreateOrderPage";
 
 function App() {
   // const [count, setCount] = useState(0);
@@ -208,6 +212,10 @@ useEffect(() => {
       <Routes>
         <Route path="/" element={<Navigate to="/admin/dashboard/order/table" replace />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard/order/table" replace />} />
+        <Route 
+  path="/admin/dashboard/order/create" 
+  element={<CreateOrderPage />} 
+/>
         {/* <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/home" element={<Home />} />
@@ -303,7 +311,8 @@ useEffect(() => {
 
               <Route path="customer/:customerId/details" element={<CustomerDetailsPage/>}  />
 
-
+       {/* Add Merchants Permission route */}
+        <Route path="merchants-permission" element={<MerchantsPermission />} />   
 
        {/* alaytics */}
 
@@ -417,7 +426,7 @@ useEffect(() => {
 
 
 
-<Route path="/admin/agent-slider" element={<AgentDashboardLayout />}>
+<Route path="admin/agent-slider" element={<AgentDashboardLayout />}>
   {/* Index route (default child route) */}
   <Route index element={<AdminAgentDashboardLayout />} />
   

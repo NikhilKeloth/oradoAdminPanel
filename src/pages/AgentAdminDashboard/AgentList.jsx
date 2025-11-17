@@ -176,7 +176,7 @@ export default function AgentList() {
                       <td className="px-6 py-3">
 
                           <Link 
-      to={`/admin/agent-slider/agent/details/${agent.id}`}
+      to={`/oradoadmin/admin/agent-slider/agent/details/${agent.id}`}
       >  
       
                         <div className="flex items-center gap-3">

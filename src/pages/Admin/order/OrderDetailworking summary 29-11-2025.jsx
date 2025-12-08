@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import OrderHistory from "./OrderHistory";
-import OrderEditHistory from "./OrderEditHistory";
 import { useParams, useNavigate } from "react-router-dom";
-import { getAdminOrderDetails, updateOrderDetails, saveOrderEditHistory} from "../../../apis/adminApis/adminFuntionsApi";
+import { getAdminOrderDetails, updateOrderDetails } from "../../../apis/adminApis/adminFuntionsApi";
 import { updateOrderStatus } from "../../../apis/adminApis/orderApi";
 import { toast } from 'react-toastify';
-import { FiEdit2, FiSave, FiX, FiMapPin, FiClock} from 'react-icons/fi';
+import { FiEdit2, FiSave, FiX, FiMapPin } from 'react-icons/fi';
 import axios from 'axios';
 
 // Import the split components
@@ -322,7 +321,7 @@ const OrderDetails = () => {
 
   // Edit states
   const [isEditing, setIsEditing] = useState(false);
-  // const [editingSection, setEditingSection] = useState(null);
+  const [editingSection, setEditingSection] = useState(null);
   const [showAddressMap, setShowAddressMap] = useState(false);
 
   // Real-time pricing states
@@ -398,18 +397,13 @@ const OrderDetails = () => {
   }, [fetchOrderDetails]);
 
   // Fetch real-time pricing when editing starts or items/address change
-  // useEffect(() => {
-  //   if (isEditing && editingSection === 'items') {
-  //     // Initial fetch when editing starts
-  //     fetchRealTimePricing();
-  //   }
-  // }, [isEditing, editingSection, fetchRealTimePricing]);
   useEffect(() => {
-    if (isEditing) {
-      // Fetch real-time pricing whenever editing mode is active
+    if (isEditing && editingSection === 'items') {
+      // Initial fetch when editing starts
       fetchRealTimePricing();
     }
-  }, [isEditing, fetchRealTimePricing]);
+  }, [isEditing, editingSection, fetchRealTimePricing]);
+
   const handleStatusChange = async (newStatus) => {
     if (!orderId) return;
 
@@ -440,14 +434,14 @@ const OrderDetails = () => {
   // Edit handlers
   const startEditing = (section) => {
     setIsEditing(true);
-    // setEditingSection(section);
+    setEditingSection(section);
     // Reset real-time pricing when starting to edit
     setRealTimePricing(null);
   };
 
   const cancelEditing = () => {
     setIsEditing(false);
-    // setEditingSection(null);
+    setEditingSection(null);
     // Reset edited data
     setEditedAdditionalInfo(order.additionalInfo || {});
     setEditedItems([...order.orderItems]);
@@ -456,482 +450,93 @@ const OrderDetails = () => {
     setRealTimePricing(null);
   };
 
-  // const saveEditing = async () => {
-  //   try {
-  //     // Create EXACT copy of order table structure with current edits
-  //     const orderTableCopy = {
-  //       _id: order._id,
-  //       customerId: order.customerId,
-  //       restaurantId: order.restaurantId,
-  //       cartId: order.cartId,
-  //       orderItems: editedItems,
-  //       paymentMethod: order.paymentMethod,
-  //       walletUsed: order.walletUsed,
-  //       walletAmount: order.walletAmount,
-  //       paymentStatus: order.paymentStatus,
-  //       onlinePaymentDetails: order.onlinePaymentDetails,
-  //       chargesBreakdown: order.chargesBreakdown,
-  //       deliveryLocation: order.deliveryLocation,
-  //       deliveryAddress: editedDeliveryAddress,
-  //       additionalInfo: editedAdditionalInfo,
-  //       allocationMethod: order.allocationMethod,
-  //       allocationRetries: order.allocationRetries,
-  //       agentAssignmentStatus: order.agentAssignmentStatus,
-  //       agentDeliveryStatus: order.agentDeliveryStatus,
-  //       orderStatus: order.orderStatus,
-  //       preparationTime: order.preparationTime,
-  //       orderPreparationStartedAt: order.orderPreparationStartedAt,
-  //       preparationDelayReason: order.preparationDelayReason,
-  //       customerReviewImages: order.customerReviewImages,
-  //       restaurantReviewImages: order.restaurantReviewImages,
-  //       promoCode: order.promoCode,
-  //       loyaltyPointsUsed: order.loyaltyPointsUsed,
-  //       loyaltyPointsValue: order.loyaltyPointsValue,
-  //       instructions: order.instructions,
-  //       taxDetails: order.taxDetails,
-  //       comboBreakdown: order.comboBreakdown,
-  //       agentCandidates: order.agentCandidates,
-  //       rejectionHistory: order.rejectionHistory,
-  //       orderTime: order.orderTime,
-  //       appliedOffers: order.appliedOffers,
-  //       createdAt: order.createdAt,
-  //       updatedAt: new Date().toISOString(),
-  //       __v: order.__v
-  //     };
+  const saveEditing = async () => {
+    try {
+      const updatedData = {};
 
-  //     // 1. Save exact copy to edit history
-  //     await saveOrderEditHistory(orderId, orderTableCopy);
+      if (editingSection === 'additionalInfo') {
+        updatedData.additionalInfo = editedAdditionalInfo;
+      } else if (editingSection === 'items') {
+        updatedData.orderItems = editedItems;
+      } else if (editingSection === 'address') {
+        updatedData.deliveryAddress = editedDeliveryAddress;
+        if (order.deliveryLocation) {
+          updatedData.deliveryLocation = order.deliveryLocation;
+        }
+      }
 
-  //     // 2. Update main order with current edits
-  //     const updateData = {
-  //       orderItems: editedItems,
-  //       deliveryAddress: editedDeliveryAddress,
-  //       additionalInfo: editedAdditionalInfo,
-  //       updatedAt: new Date().toISOString()
-  //     };
+      await updateOrderDetails(orderId, updatedData);
 
-  //     await updateOrderDetails(orderId, updateData);
-
-  //     // 3. Update local state
-  //     setOrder(prev => ({
-  //       ...prev,
-  //       orderItems: editedItems,
-  //       deliveryAddress: editedDeliveryAddress,
-  //       additionalInfo: editedAdditionalInfo,
-  //       updatedAt: new Date().toISOString()
-  //     }));
+      // Update local state
+      setOrder(prev => ({
+        ...prev,
+        ...(editingSection === 'additionalInfo' && { additionalInfo: editedAdditionalInfo }),
+        ...(editingSection === 'items' && { orderItems: editedItems }),
+        ...(editingSection === 'address' && {
+          deliveryAddress: editedDeliveryAddress
+        })
+      }));
       
-  //     setIsEditing(false);
-  //     setEditingSection(null);
-  //     setRealTimePricing(null);
-  //     toast.success('Order updated successfully');
+      setIsEditing(false);
+      setEditingSection(null);
+      setRealTimePricing(null);
+      toast.success('Order updated successfully');
 
-  //   } catch (error) {
-  //     console.error('Failed to update order:', error);
-  //     toast.error('Failed to update order');
-  //   }
-  // };
+    } catch (error) {
+      console.error('Failed to update order:', error);
+      toast.error('Failed to update order');
+    }
+  };
 
   // Handle items update from OrderItemsSection
-  // const handleItemsUpdate = (updatedItems) => {
-  //   setEditedItems(updatedItems);
-  //   // Trigger real-time pricing update when items change
-  //   if (isEditing && editingSection === 'items') {
-  //     fetchRealTimePricing();
-  //   }
-  // };
-
   const handleItemsUpdate = (updatedItems) => {
     setEditedItems(updatedItems);
     // Trigger real-time pricing update when items change
-    if (isEditing) {
+    if (isEditing && editingSection === 'items') {
       fetchRealTimePricing();
     }
   };
 
   // Handle address selection - trigger pricing update
-  // const handleAddressSelect = async (addressData) => {
-  //   try {
-  //     const updatedAddress = {
-  //       ...editedDeliveryAddress,
-  //       ...addressData,
-  //       _id: editedDeliveryAddress._id,
-  //       type: "Other",
-  //       street: addressData.street || editedDeliveryAddress.street,
-  //       area: addressData.area || editedDeliveryAddress.area,
-  //       landmark: addressData.landmark || editedDeliveryAddress.landmark,
-  //       city: addressData.city || editedDeliveryAddress.city,
-  //       state: addressData.state || editedDeliveryAddress.state,
-  //       zip: addressData.zip || editedDeliveryAddress.zip,
-  //       pincode: addressData.zip || editedDeliveryAddress.pincode,
-  //       country: addressData.country || editedDeliveryAddress.country
-  //     };
+  const handleAddressSelect = async (addressData) => {
+    try {
+      const updatedAddress = {
+        ...editedDeliveryAddress,
+        ...addressData,
+        _id: editedDeliveryAddress._id,
+        type: "Other",
+        street: addressData.street || editedDeliveryAddress.street,
+        area: addressData.area || editedDeliveryAddress.area,
+        landmark: addressData.landmark || editedDeliveryAddress.landmark,
+        city: addressData.city || editedDeliveryAddress.city,
+        state: addressData.state || editedDeliveryAddress.state,
+        zip: addressData.zip || editedDeliveryAddress.zip,
+        pincode: addressData.zip || editedDeliveryAddress.pincode,
+        country: addressData.country || editedDeliveryAddress.country
+      };
       
-  //     setEditedDeliveryAddress(updatedAddress);
-  //     setShowAddressMap(false);
+      setEditedDeliveryAddress(updatedAddress);
+      setShowAddressMap(false);
       
-  //     const updatedOrder = {
-  //       ...order,
-  //       deliveryAddress: updatedAddress,
-  //       deliveryLocation: addressData.location || order.deliveryLocation
-  //     };
-  //     setOrder(updatedOrder);
+      const updatedOrder = {
+        ...order,
+        deliveryAddress: updatedAddress,
+        deliveryLocation: addressData.location || order.deliveryLocation
+      };
+      setOrder(updatedOrder);
       
-  //     // Trigger real-time pricing update when address changes
-  //     if (isEditing) {
-  //       fetchRealTimePricing();
-  //     }
+      // Trigger real-time pricing update when address changes
+      if (isEditing) {
+        fetchRealTimePricing();
+      }
       
-  //     toast.success('Delivery address updated');
+      toast.success('Delivery address updated');
 
-  //   } catch (error) {
-  //     console.error('Error in handleAddressSelect:', error);
-  //     toast.error('Failed to update delivery address');
-  //   }
-  // };
-//   const saveEditing = async () => {
-//   try {
-//     // Create EXACT copy of order table structure with current edits
-//     const orderTableCopy = {
-//       _id: order._id,
-//       customerId: order.customerId,
-//       restaurantId: order.restaurantId,
-//       cartId: order.cartId,
-//       orderItems: editedItems,
-//       paymentMethod: order.paymentMethod,
-//       walletUsed: order.walletUsed,
-//       walletAmount: order.walletAmount,
-//       paymentStatus: order.paymentStatus,
-//       onlinePaymentDetails: order.onlinePaymentDetails,
-//       chargesBreakdown: order.chargesBreakdown,
-//       deliveryLocation: order.deliveryLocation,
-//       deliveryAddress: editedDeliveryAddress,
-//       additionalInfo: editedAdditionalInfo,
-//       allocationMethod: order.allocationMethod,
-//       allocationRetries: order.allocationRetries,
-//       agentAssignmentStatus: order.agentAssignmentStatus,
-//       agentDeliveryStatus: order.agentDeliveryStatus,
-//       orderStatus: order.orderStatus,
-//       preparationTime: order.preparationTime,
-//       orderPreparationStartedAt: order.orderPreparationStartedAt,
-//       preparationDelayReason: order.preparationDelayReason,
-//       customerReviewImages: order.customerReviewImages,
-//       restaurantReviewImages: order.restaurantReviewImages,
-//       promoCode: order.promoCode,
-//       loyaltyPointsUsed: order.loyaltyPointsUsed,
-//       loyaltyPointsValue: order.loyaltyPointsValue,
-//       instructions: order.instructions,
-//       taxDetails: order.taxDetails,
-//       comboBreakdown: order.comboBreakdown,
-//       agentCandidates: order.agentCandidates,
-//       rejectionHistory: order.rejectionHistory,
-//       orderTime: order.orderTime,
-//       appliedOffers: order.appliedOffers,
-//       createdAt: order.createdAt,
-//       updatedAt: new Date().toISOString(),
-//       __v: order.__v
-//     };
-
-//     // ONLY call the history function
-//     await saveOrderEditHistory(orderId, orderTableCopy);
-    
-//     // Just update local state to reflect the changes
-//     setOrder(prev => ({
-//       ...prev,
-//       orderItems: editedItems,
-//       deliveryAddress: editedDeliveryAddress,
-//       additionalInfo: editedAdditionalInfo,
-//       updatedAt: new Date().toISOString()
-//     }));
-    
-//     setIsEditing(false);
-//     setEditingSection(null);
-//     setRealTimePricing(null);
-//     toast.success('Order edit history saved successfully');
-
-//   } catch (error) {
-//     console.error('Failed to save order edit history:', error);
-//     toast.error('Failed to save order edit history');
-//   }
-// };
-
-// const saveEditing = async () => {
-//   try {
-//     // Use real-time pricing data (which we know is working)
-//     const pricingData = realTimePricing;
-
-//     // Create the complete order snapshot with UPDATED PRICING
-//     const orderTableCopy = {
-//       // Basic order info
-//       _id: order._id,
-//       customerId: order.customerId,
-//       restaurantId: order.restaurantId,
-//       cartId: order.cartId,
-      
-//       // Updated order items
-//       orderItems: editedItems,
-      
-//       // Payment info
-//       paymentMethod: order.paymentMethod,
-//       walletUsed: order.walletUsed,
-//       walletAmount: order.walletAmount,
-//       paymentStatus: order.paymentStatus,
-      
-//       // UPDATED ONLINE PAYMENT DETAILS WITH REAL-TIME PRICING
-//       onlinePaymentDetails: {
-//         ...order.onlinePaymentDetails,
-//         // Use the real-time pricing data
-//         subtotal: pricingData?.subtotal || 0,
-//         tax: pricingData?.tax || 0,
-//         totalTaxAmount: pricingData?.totalTaxAmount || 0,
-//         deliveryCharge: pricingData?.deliveryFee || pricingData?.deliveryCharge || 0,
-//         surgeCharge: pricingData?.surgeCharge || 0,
-//         tipAmount: pricingData?.tipAmount || 0,
-//         totalAmount: pricingData?.finalAmount || pricingData?.grandTotal || 0,
-//         // Keep original discount/coupon info
-//         offerDiscount: order.onlinePaymentDetails?.offerDiscount || 0,
-//         couponDiscount: order.onlinePaymentDetails?.couponDiscount || 0,
-//         comboDiscount: order.onlinePaymentDetails?.comboDiscount || 0,
-//         flatDiscount: order.onlinePaymentDetails?.flatDiscount || 0,
-//         percentageDiscount: order.onlinePaymentDetails?.percentageDiscount || 0,
-//         bogoDiscount: order.onlinePaymentDetails?.bogoDiscount || 0,
-//         totalDiscount: order.onlinePaymentDetails?.totalDiscount || 0,
-//         couponCode: order.onlinePaymentDetails?.couponCode || ""
-//       },
-      
-//       // UPDATED CHARGES BREAKDOWN WITH REAL-TIME PRICING
-//       chargesBreakdown: {
-//         ...order.chargesBreakdown,
-//         packingCharges: pricingData?.packingCharges || order.chargesBreakdown?.packingCharges,
-//         totalPackingCharge: pricingData?.totalPackingCharge || order.chargesBreakdown?.totalPackingCharge,
-//         additionalCharges: pricingData?.additionalCharges || order.chargesBreakdown?.additionalCharges,
-//         totalAdditionalCharges: pricingData?.totalAdditionalCharges || order.chargesBreakdown?.totalAdditionalCharges
-//       },
-      
-//       // Delivery info
-//       deliveryLocation: order.deliveryLocation,
-//       deliveryAddress: editedDeliveryAddress,
-//       additionalInfo: editedAdditionalInfo,
-      
-//       // Order status info
-//       allocationMethod: order.allocationMethod,
-//       allocationRetries: order.allocationRetries,
-//       agentAssignmentStatus: order.agentAssignmentStatus,
-//       agentDeliveryStatus: order.agentDeliveryStatus,
-//       orderStatus: order.orderStatus,
-//       preparationTime: order.preparationTime,
-//       orderPreparationStartedAt: order.orderPreparationStartedAt,
-//       preparationDelayReason: order.preparationDelayReason,
-      
-//       // Reviews and promotions
-//       customerReviewImages: order.customerReviewImages,
-//       restaurantReviewImages: order.restaurantReviewImages,
-//       promoCode: order.promoCode,
-//       loyaltyPointsUsed: order.loyaltyPointsUsed,
-//       loyaltyPointsValue: order.loyaltyPointsValue,
-//       instructions: order.instructions,
-      
-//       // Tax details - use updated ones
-//       taxDetails: pricingData?.taxDetails || order.taxDetails,
-//       comboBreakdown: order.comboBreakdown,
-      
-//       // System fields
-//       agentCandidates: order.agentCandidates,
-//       rejectionHistory: order.rejectionHistory,
-//       orderTime: order.orderTime,
-//       appliedOffers: order.appliedOffers,
-//       createdAt: order.createdAt,
-//       updatedAt: new Date().toISOString(),
-//       __v: order.__v,
-      
-//       // THE COMPLETE PRICING OBJECT
-//       pricing: pricingData || order.pricing
-//     };
-
-//     // Save to snapshot
-//     await saveOrderEditHistory(orderId, orderTableCopy);
-    
-//     // Update local state
-//     setOrder(prev => ({
-//       ...prev,
-//       orderItems: editedItems,
-//       deliveryAddress: editedDeliveryAddress,
-//       additionalInfo: editedAdditionalInfo,
-//       updatedAt: new Date().toISOString()
-//     }));
-    
-//     setIsEditing(false);
-//     setEditingSection(null);
-//     setRealTimePricing(null);
-//     toast.success('Order edit history saved successfully');
-
-//   } catch (error) {
-//     console.error('Failed to save order edit history:', error);
-//     toast.error('Failed to save order edit history');
-//   }
-// };
-
-const saveEditing = async () => {
-  try {
-    const pricingData = realTimePricing;
-
-    // Prepare ALL the data to update
-    const updateData = {
-      // 1. Updated Order Items
-      orderItems: editedItems,
-      
-      // 2. Updated Delivery Address & Location
-      deliveryAddress: editedDeliveryAddress,
-      deliveryLocation: order.deliveryLocation, // Keep existing or update if changed
-      
-      // 3. Updated Additional Information
-      additionalInfo: editedAdditionalInfo,
-
-      offerId: pricingData?.offerId || null,
-      offerName: pricingData?.offerName || null,
-      offerType: pricingData?.offerType || null,
-      offerDiscount: pricingData?.offerDiscount || 0,
-      couponCode: pricingData?.couponCode || "",
-      couponDiscount: pricingData?.couponDiscount || 0,
-      comboDiscount: pricingData?.comboDiscount || 0,
-      flatDiscount: pricingData?.flatDiscount || 0,
-      percentageDiscount: pricingData?.percentageDiscount || 0,
-      bogoDiscount: pricingData?.bogoDiscount || 0,
-      totalDiscount: pricingData?.totalDiscount || 0,
-      subtotal: pricingData?.subtotal || 0,
-      tax: pricingData?.tax || 0,
-      totalTaxAmount: pricingData?.totalTaxAmount || 0,
-      deliveryCharge: pricingData?.deliveryFee || pricingData?.deliveryCharge || 0,
-      surgeCharge: pricingData?.surgeCharge || 0,
-      tipAmount: pricingData?.tipAmount || 0,
-      totalAmount: pricingData?.finalAmount || pricingData?.grandTotal || 0,
-      
-      // 4. Updated Pricing Information
-      onlinePaymentDetails: {
-        ...order.onlinePaymentDetails,
-        // Real-time pricing data
-        subtotal: pricingData?.subtotal || 0,
-        tax: pricingData?.tax || 0,
-        totalTaxAmount: pricingData?.totalTaxAmount || 0,
-        deliveryCharge: pricingData?.deliveryFee || pricingData?.deliveryCharge || 0,
-        surgeCharge: pricingData?.surgeCharge || 0,
-        tipAmount: pricingData?.tipAmount || 0,
-        totalAmount: pricingData?.finalAmount || pricingData?.grandTotal || 0,
-        // Keep original discount/coupon info
-        offerDiscount: order.onlinePaymentDetails?.offerDiscount || 0,
-        couponDiscount: order.onlinePaymentDetails?.couponDiscount || 0,
-        comboDiscount: order.onlinePaymentDetails?.comboDiscount || 0,
-        flatDiscount: order.onlinePaymentDetails?.flatDiscount || 0,
-        percentageDiscount: order.onlinePaymentDetails?.percentageDiscount || 0,
-        bogoDiscount: order.onlinePaymentDetails?.bogoDiscount || 0,
-        totalDiscount: order.onlinePaymentDetails?.totalDiscount || 0,
-        couponCode: order.onlinePaymentDetails?.couponCode || ""
-      },
-      
-      // 5. Updated Charges Breakdown
-      chargesBreakdown: {
-        ...order.chargesBreakdown,
-        packingCharges: pricingData?.packingCharges || order.chargesBreakdown?.packingCharges,
-        totalPackingCharge: pricingData?.totalPackingCharge || order.chargesBreakdown?.totalPackingCharge,
-        additionalCharges: pricingData?.additionalCharges || order.chargesBreakdown?.additionalCharges,
-        totalAdditionalCharges: pricingData?.totalAdditionalCharges || order.chargesBreakdown?.totalAdditionalCharges
-      },
-      
-      // 6. Updated Tax Details
-      taxDetails: pricingData?.taxDetails || order.taxDetails,
-      
-      // 7. Complete Pricing Object
-      pricing: pricingData || order.pricing,
-      
-      // 8. Timestamp
-      updatedAt: new Date().toISOString()
-    };
-
-    console.log("Sending update data:", updateData);
-
-    // Call API - backend will auto-handle snapshot
-    await saveOrderEditHistory(orderId, updateData);
-    
-    // Update local state with ALL new data
-    setOrder(prev => ({
-      ...prev,
-      ...updateData,
-      updatedAt: new Date().toISOString()
-    }));
-    
-    setIsEditing(false);
-    // setEditingSection(null);
-    setRealTimePricing(null);
-    toast.success('Order updated successfully');
-    await refreshOrderData();
-
-  } catch (error) {
-    console.error('Failed to update order:', error);
-    toast.error('Failed to update order');
-  }
-};
-
-const refreshOrderData = async () => {
-  try {
-    setLoading(true); // Show loading indicator
-    const response = await getAdminOrderDetails(orderId);
-    setOrder(response);
-    if (response) {
-      // Reset all edited states to match new data
-      setEditedAdditionalInfo(response.additionalInfo || {});
-      setEditedItems(response.orderItems || []);
-      setEditedDeliveryAddress(response.deliveryAddress || {});
+    } catch (error) {
+      console.error('Error in handleAddressSelect:', error);
+      toast.error('Failed to update delivery address');
     }
-  } catch (error) {
-    console.error("Error refreshing order details:", error);
-    toast.error("Failed to refresh order details");
-  } finally {
-    setLoading(false);
-  }
-};
-  // Handle address selection - trigger pricing update
-const handleAddressSelect = async (addressData) => {
-  try {
-    const updatedAddress = {
-      ...editedDeliveryAddress,
-      ...addressData,
-      _id: editedDeliveryAddress._id,
-      type: "Other",
-      street: addressData.street || editedDeliveryAddress.street,
-      area: addressData.area || editedDeliveryAddress.area,
-      landmark: addressData.landmark || editedDeliveryAddress.landmark,
-      city: addressData.city || editedDeliveryAddress.city,
-      state: addressData.state || editedDeliveryAddress.state,
-      zip: addressData.zip || editedDeliveryAddress.zip,
-      pincode: addressData.zip || editedDeliveryAddress.pincode,
-      country: addressData.country || editedDeliveryAddress.country
-    };
-    
-    setEditedDeliveryAddress(updatedAddress);
-    setShowAddressMap(false);
-    
-    const updatedOrder = {
-      ...order,
-      deliveryAddress: updatedAddress,
-      deliveryLocation: addressData.location || order.deliveryLocation
-    };
-    setOrder(updatedOrder);
-    
-    // FIX: Don't change editingSection, keep it as 'items' if we were editing items
-    // Just close the map modal but maintain the current editing state
-    
-    // Trigger real-time pricing update when address changes
-    if (isEditing) {
-      fetchRealTimePricing();
-    }
-    
-    toast.success('Delivery address updated');
-
-  } catch (error) {
-    console.error('Error in handleAddressSelect:', error);
-    toast.error('Failed to update delivery address');
-  }
-};
+  };
 
   // Additional info handlers
   const handleAdditionalInfoChange = (field, value) => {
@@ -1091,22 +696,8 @@ const handleAddressSelect = async (addressData) => {
                   </div>
                 </div>
 
-                {/* <div className={`px-2 py-1 rounded-lg text-xs font-semibold ${getStatusColor(order.orderStatus)}`}>
+                <div className={`px-2 py-1 rounded-lg text-xs font-semibold ${getStatusColor(order.orderStatus)}`}>
                   {order.orderStatus?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) || "N/A"}
-                </div> */}
-
-                <div className="flex items-center space-x-2">
-                  <div className={`px-2 py-1 rounded-lg text-xs font-semibold ${getStatusColor(order.orderStatus)}`}>
-                    {order.orderStatus?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) || "N/A"}
-                  </div>
-                  
-                  {/* Edit History Indicator */}
-                  {order.snapshots && order.snapshots.length > 0 && (
-                    <div className="flex items-center space-x-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-lg text-xs font-medium">
-                      <FiClock className="w-3 h-3" />
-                      <span>Edited {order.snapshots.length} time{order.snapshots.length !== 1 ? 's' : ''}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1205,7 +796,7 @@ const handleAddressSelect = async (addressData) => {
                       {isEditing && (
                         <button
                           onClick={() => {
-                            // startEditing('address');
+                            startEditing('address');
                             setShowAddressMap(true);
                           }}
                           className="flex items-center space-x-1 text-pink-600 hover:text-pink-700 text-xs font-medium"
@@ -1260,20 +851,19 @@ const handleAddressSelect = async (addressData) => {
                   <div className="w-1.5 h-4 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full mr-2"></div>
                   Additional Information
                 </h2>
-                {/* {!isEditing && (
+                {isEditing && (
                   <button
-                    onClick={startEditing}
+                    onClick={() => startEditing('additionalInfo')}
                     className="flex items-center space-x-1 text-pink-600 hover:text-pink-700 text-xs font-medium"
                   >
                     <FiEdit2 className="w-3 h-3" />
                     <span>Edit</span>
                   </button>
-                )} */}
+                )}
               </div>
 
               <div className="p-3">
-                {/* {isEditing && editingSection === 'additionalInfo' ? ( */}
-                {isEditing ? (
+                {isEditing && editingSection === 'additionalInfo' ? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
@@ -1344,15 +934,11 @@ const handleAddressSelect = async (addressData) => {
             <OrderItemsSection
               order={order}
               isEditing={isEditing}
-              // editingSection={editingSection}
+              editingSection={editingSection}
               editedItems={editedItems}
               setEditedItems={handleItemsUpdate}
-              // startEditing={startEditing}
+              startEditing={startEditing}
             />
-            <OrderEditHistory 
-                snapshots={order.snapshots} 
-                currentOrder={order}
-              />
 
             {/* Order History */}
             <OrderHistory orderId={orderId} orderData={order} />
@@ -1362,25 +948,17 @@ const handleAddressSelect = async (addressData) => {
           <div className="space-y-3">
             {/* When NOT editing, show the regular OrderSummaryCards */}
             {!isEditing ? (
-              <div className="sticky top-4 space-y-3">
-                <OrderSummaryCards
-                  order={order}
-                  canAcceptReject={canAcceptReject}
-                  handleQuickAccept={handleQuickAccept}
-                  handleQuickReject={handleQuickReject}
-                  updatingStatus={updatingStatus}
-                  calculateItemsSubtotal={calculateItemsSubtotal}
-                />
-              </div>
+              <OrderSummaryCards
+                order={order}
+                canAcceptReject={canAcceptReject}
+                handleQuickAccept={handleQuickAccept}
+                handleQuickReject={handleQuickReject}
+                updatingStatus={updatingStatus}
+                calculateItemsSubtotal={calculateItemsSubtotal}
+              />
             ) : (
-              /* When editing, show Original, Updated Pricing, and Earnings - ALL STICKY */
-              <div className="sticky top-4 space-y-3">
-                {/* Original Bill Summary */}
-                <OriginalBillSummary
-                  order={order}
-                  calculateItemsSubtotal={calculateItemsSubtotal}
-                />
-                
+              /* When editing, show Real-time Pricing Summary and Original Bill Summary below */
+              <>
                 {/* Real-time Pricing Summary */}
                 <RealTimePricingSummary
                   order={order}
@@ -1388,8 +966,14 @@ const handleAddressSelect = async (addressData) => {
                   loading={pricingLoading}
                   editedItems={editedItems}
                 />
-                
-                {/* Earnings Summary */}
+
+                {/* Original Bill Summary (moved down) */}
+                <OriginalBillSummary
+                  order={order}
+                  calculateItemsSubtotal={calculateItemsSubtotal}
+                />
+
+                {/* Keep Earnings Summary */}
                 <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/50 overflow-hidden">
                   <div className="px-3 py-2 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50">
                     <h2 className="text-sm font-bold text-gray-900 flex items-center">
@@ -1415,7 +999,7 @@ const handleAddressSelect = async (addressData) => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>

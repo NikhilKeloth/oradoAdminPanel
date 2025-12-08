@@ -1968,13 +1968,13 @@ const AddRestaurant = () => {
           </button>
           
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* <button
+            <button
               type="button"
               onClick={toggleShowPreview}
               className="px-5 py-2.5 border border-pink-200 text-pink-700 rounded-lg hover:bg-pink-50 transition-all duration-200 font-medium shadow-sm text-sm"
             >
               {showPreview ? 'Hide' : 'Show'} Preview
-            </button> */}
+            </button>
             
             <button
               type="button"

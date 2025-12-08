@@ -1,8 +1,25 @@
 import apiClient from "../apiClient/apiClient";
 
-export const getAdminOrders = async (page = 1, limit = 10) => {
+// export const getAdminOrders = async (page = 1, limit = 10) => {
+//   try {
+//     const response = await apiClient.get(`/admin/order-list?page=${page}&limit=${limit}`);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Failed to fetch orders:", error);
+//     throw error;
+//   }
+// };
+
+export const getAdminOrders = async (page = 1, limit = 10, status = null) => {
   try {
-    const response = await apiClient.get(`/admin/order-list?page=${page}&limit=${limit}`);
+    const params = new URLSearchParams();
+    params.append('page', page);
+    params.append('limit', limit);
+    if (status) {
+      params.append('status', status);
+    }
+    
+    const response = await apiClient.get(`/admin/order-list?${params.toString()}`);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch orders:", error);
@@ -15,6 +32,34 @@ export const getAdminOrderDetails = async (orderId) => {
     return response.data.data;
   } catch (error) {
     console.error("Failed to fetch order details:", error);
+    throw error;
+  }
+};
+
+// Add this to your adminApis/adminFuntionsApi.js file
+
+export const updateOrderDetails = async (orderId, updateData) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    
+    const response = await axios.put(
+      `${API_BASE_URL}/admin/orders/${orderId}`,
+      updateData,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.data.messageType === "success") {
+      return response.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to update order details');
+    }
+  } catch (error) {
+    console.error('Error updating order details:', error);
     throw error;
   }
 };
@@ -248,17 +293,109 @@ export const fetchSingleRestaurantDetails = async (restaurantId) => {
 
 
 
-export const updateRestaurantProfile = async (restaurantId, updateData, imageFiles = []) => {
+// export const updateRestaurantProfile = async (restaurantId, updateData, imageFiles = []) => {
+//   try {
+//     const formData = new FormData();
+
+//     // Append text fields from updateData object
+//     for (const key in updateData) {
+//       formData.append(key, updateData[key]);
+//     }
+
+//     // Append images
+//     imageFiles.forEach(file => {
+//       formData.append("images", file);
+//     });
+
+//     const response = await apiClient.put(
+//       `/admin/edit/restaurant/${restaurantId}`,
+//       formData,
+//       {
+//         headers: {
+//           "Content-Type": "multipart/form-data",
+//         },
+//       }
+//     );
+
+//     return response.data;
+
+//   } catch (error) {
+//     console.error("Error updating restaurant:", error.response?.data?.message || error.message);
+//     throw error;
+//   }
+// };
+
+// Add this function to your adminFunctionsApi.js file
+// export const updateRestaurantProfile = async (restaurantId, updateData, imageFiles = []) => {
+//   try {
+//     console.log("🔄 API: Sending update for restaurant:", restaurantId);
+//     console.log("📦 Update data:", updateData);
+    
+//     // If we have images to upload, use FormData
+//     if (imageFiles.length > 0) {
+//       console.log("📸 Images found, using FormData");
+      
+//       const formData = new FormData();
+      
+//       // Append JSON data as string
+//       formData.append("data", JSON.stringify(updateData));
+      
+//       // Append images
+//       imageFiles.forEach(file => {
+//         formData.append("images", file);
+//       });
+
+//       const response = await apiClient.put(
+//         `/admin/edit/restaurant/${restaurantId}`,
+//         formData,
+//         {
+//           headers: {
+//             "Content-Type": "multipart/form-data",
+//           },
+//         }
+//       );
+//       return response.data;
+      
+//     } else {
+//       // NO IMAGES: Send as plain JSON (your current case)
+//       console.log("📄 No images, sending as JSON");
+      
+//       const response = await apiClient.put(
+//         `/admin/edit/restaurant/${restaurantId}`,
+//         updateData, // Send as JSON object
+//         {
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+//       return response.data;
+//     }
+
+//   } catch (error) {
+//     console.error("❌ Error updating restaurant:", error.response?.data?.message || error.message);
+//     throw error;
+//   }
+// };
+
+export const updateRestaurantProfile = async (restaurantId, updateData, imageFiles = [], filesToRemove = []) => {
   try {
+    console.log("🔄 API: Updating restaurant", restaurantId);
+    console.log("📦 Data:", updateData);
+    console.log("📸 Images to upload:", imageFiles.length);
+    console.log("🗑️ Images to remove:", filesToRemove);
+
+    // Create FormData for everything
     const formData = new FormData();
-
-    // Append text fields from updateData object
-    for (const key in updateData) {
-      formData.append(key, updateData[key]);
-    }
-
-    // Append images
-    imageFiles.forEach(file => {
+    
+    // 1. Append the JSON data as a string
+    formData.append("data", JSON.stringify({
+      ...updateData,
+      removeImages: filesToRemove // Add images to remove
+    }));
+    
+    // 2. Append each image file
+    imageFiles.forEach((file, index) => {
       formData.append("images", file);
     });
 
@@ -275,7 +412,21 @@ export const updateRestaurantProfile = async (restaurantId, updateData, imageFil
     return response.data;
 
   } catch (error) {
-    console.error("Error updating restaurant:", error.response?.data?.message || error.message);
+    console.error("❌ Error updating restaurant:", error.response?.data?.message || error.message);
+    throw error;
+  }
+};
+
+
+export const updateRestaurantActiveStatus = async (restaurantId, isActive) => {
+  try {
+    const response = await apiClient.put(
+      `/admin/restaurants/${restaurantId}/status`,
+      { active: isActive }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating restaurant status:", error);
     throw error;
   }
 };
@@ -432,3 +583,96 @@ export const saveFcmToken = async ({  token,  platform = 'web' }) => {
     throw error;
   }
 }
+
+// Add this function to your adminFuntionsApi.js file
+export const getOrderHistory = async (orderId) => {
+  try {
+    const response = await fetch(`/api/admin/orders/${orderId}/history`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch order history');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching order history:', error);
+    throw error;
+  }
+};
+
+export const getAdminOrderCounts = async () => {
+  try {
+    const response = await apiClient.get('/admin/order-counts');
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch order counts:", error);
+    throw error;
+  }
+};
+
+
+export const saveOrderEditHistory = async (orderId, orderData) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    const response = apiClient.post(
+      `/order/${orderId}/snapshot`,
+      orderData,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const duplicateRestaurant = async (restaurantId, newName) => {
+  try {
+    const response = await apiClient.post(
+      `/admin/restaurant/${restaurantId}/duplicate`,
+      { newName }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error duplicating restaurant:", error);
+    throw error;
+  }
+};
+
+// Block restaurant
+export const blockRestaurant = async (restaurantId, reason) => {
+  try {
+    const response = await apiClient.patch(
+      `/admin/restaurant/${restaurantId}/block`,
+      { reason }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error blocking restaurant:", error);
+    throw error;
+  }
+};
+
+// Unblock restaurant
+export const unblockRestaurant = async (restaurantId, reason) => {
+  try {
+    const response = await apiClient.patch(
+      `/admin/restaurant/${restaurantId}/unblock`,
+      { reason }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error unblocking restaurant:", error);
+    throw error;
+  }
+};

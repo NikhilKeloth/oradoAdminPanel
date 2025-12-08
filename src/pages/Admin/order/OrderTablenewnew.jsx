@@ -36,7 +36,6 @@ const OrdersTable = () => {
   const [orders, setOrders] = useState([]);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [updatingOrders, setUpdatingOrders] = useState({});
-  const [hoveredOrderId, setHoveredOrderId] = useState(null);
   
   // Tab counts state
   const [tabCounts, setTabCounts] = useState({
@@ -169,7 +168,7 @@ const OrdersTable = () => {
   
   const getRowBackgroundColor = (order) => {
     if (isNewOrder(order)) {
-      return 'bg-pink-50 hover:bg-pink-100';
+      return 'bg-[#fedad3] hover:bg-[#fec9ba]';
     }
     return 'bg-white hover:bg-gray-50';
   };
@@ -208,7 +207,7 @@ const OrdersTable = () => {
       case "online":
         return "bg-cyan-100 text-cyan-800 border border-cyan-200";
       case "credit":
-        return "bg-pink-100 text-pink-800 border border-pink-200";
+        return "bg-orange-100 text-orange-800 border border-orange-200";
       case "corporate":
       case "meal_card":
         return "bg-gray-100 text-gray-800 border border-gray-200";
@@ -230,13 +229,10 @@ const OrdersTable = () => {
       toast.success('Copied to clipboard!');
     });
   };
-  const getAudioPath = () => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/sound/bell.wav`;
-  };
+  
   const enableAudio = async () => {
     try {
-      const audio = new Audio('/oradoadmin/sound/bell.wav');
+      const audio = new Audio('/sound/bell.wav');
       audio.preload = 'auto';
       await audio.load();
       audio.muted = true;
@@ -323,7 +319,7 @@ const OrdersTable = () => {
     });
    
     if (audioEnabled) {
-      const audio = new Audio('/oradoadmin/sound/bell.wav');
+      const audio = new Audio('/sound/bell.wav');
       audio.play().catch(e => {
         console.log('Audio play failed:', e);
         disableAudio();
@@ -673,7 +669,7 @@ const OrdersTable = () => {
 
   const testNotification = () => {
     if (audioEnabled) {
-      const audio = new Audio('/oradoadmin/sound/bell.wav');
+      const audio = new Audio('/sound/bell.wav');
       audio.play().catch(e => {
         console.log('Audio play failed:', e);
         disableAudio();
@@ -694,34 +690,6 @@ const OrdersTable = () => {
         }
       });
     }
-  };
-
-  // Render order items tooltip
-  const renderOrderItemsTooltip = (order) => {
-    if (!order.orderItems || order.orderItems.length === 0) return null;
-    
-    return (
-      <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3">
-        <div className="text-xs font-semibold text-gray-700 mb-2">Order Items:</div>
-        <div className="space-y-1 max-h-40 overflow-y-auto">
-          {order.orderItems.map((item, index) => (
-            <div key={index} className="flex justify-between items-center text-xs">
-              <span className="text-gray-600 flex-1 truncate mr-2">{item.name}</span>
-              <span className="text-gray-500 whitespace-nowrap">- {item.quantity} -</span>
-              <span className="text-green-600 font-medium whitespace-nowrap ml-1">₹{item.totalPrice}</span>
-            </div>
-          ))}
-        </div>
-        <div className="border-t mt-2 pt-2">
-          <div className="flex justify-between text-xs font-semibold">
-            <span>Total:</span>
-            <span className="text-blue-600">
-              ₹{order.orderItems.reduce((sum, item) => sum + item.totalPrice, 0)}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -748,7 +716,7 @@ const OrdersTable = () => {
                   href="https://orado.online/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center space-x-1 text-pink-600 hover:text-pink-800 text-xs"
+                  className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-xs"
                 >
                   <span>orado.online</span>
                   <FiExternalLink size={12} />
@@ -850,9 +818,9 @@ const OrdersTable = () => {
             <div className="md:ml-3 mt-1 md:mt-0">
               <Link
                 to="/admin/dashboard/order/create"
-                className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2.5 rounded-lg transition-colors text-sm font-medium shadow-md hover:shadow-lg"
+                className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg transition-colors text-xs shadow-md hover:shadow-lg"
               >
-                <FiPlus size={14} />
+                <FiPlus size={12} />
                 <span>Create Order</span>
               </Link>
             </div>
@@ -1015,19 +983,15 @@ const OrdersTable = () => {
                       className={getRowBackgroundColor(order)}
                     >
                       {/* Order ID */}
-                      <td className="px-2 py-2 whitespace-nowrap text-sm font-medium relative">
+                      <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center">
                           {isNewOrder(order) && (
-                            <span className="w-1.5 h-1.5 bg-pink-500 rounded-full mr-1.5 animate-pulse" title="New Order"></span>
+                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5 animate-pulse" title="New Order"></span>
                           )}
-                          <div 
-                            className="group relative"
-                            onMouseEnter={() => setHoveredOrderId(order.orderId)}
-                            onMouseLeave={() => setHoveredOrderId(null)}
-                          >
+                          <div className="group relative">
                             <Link
                               to={`/admin/dashboard/order/table/details/${order.orderId}`}
-                              className="text-pink-600 hover:underline text-xs"
+                              className="text-blue-600 hover:underline text-xs"
                               title={fullOrderId}
                             >
                               {formatOrderId(order, index)}
@@ -1039,71 +1003,70 @@ const OrdersTable = () => {
                             >
                               <FiCopy size={10} />
                             </button>
-                            
-                            {/* Order Items Tooltip */}
-                            {hoveredOrderId === order.orderId && order.orderItems && order.orderItems.length > 0 && (
-                              renderOrderItemsTooltip(order)
-                            )}
                           </div>
                         </div>
                       </td>
                      
                       {/* Order Status */}
                       <td className="px-2 py-2 whitespace-nowrap">
-                        <div className="flex flex-col space-y-1 min-w-[140px]">
-                          {["pending", "awaiting_agent_assignment"].includes(order.orderStatus) ? (
-                            <>
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleQuickAccept(order.orderId)}
-                                  disabled={updatingOrders[order.orderId]}
-                                  className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-3 rounded flex items-center justify-center transition-colors disabled:opacity-50 shadow-sm hover:shadow-md"
-                                  title="Accept Order"
-                                >
-                                  {updatingOrders[order.orderId] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-1 border-white"></div>
-                                  ) : (
-                                    <FiCheck size={14} />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleQuickReject(order.orderId)}
-                                  disabled={updatingOrders[order.orderId]}
-                                  className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm py-2 px-3 rounded flex items-center justify-center transition-colors disabled:opacity-50 shadow-sm hover:shadow-md"
-                                  title="Reject Order"
-                                >
-                                  {updatingOrders[order.orderId] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-1 border-white"></div>
-                                  ) : (
-                                    <FiX size={14} />
-                                  )}
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="relative">
-                              {updatingOrders[order.orderId] ? (
-                                <div className="flex items-center justify-center py-1">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                </div>
-                              ) : (
-                                <select
-                                  value={order.orderStatus}
-                                  onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                                  className={`text-[10px] px-1 py-1 rounded-full border ${getStatusColor(order.orderStatus)} cursor-pointer w-full`}
-                                  disabled={updatingOrders[order.orderId]}
-                                  title={statusDisplayNames[order.orderStatus] || order.orderStatus}
-                                >
-                                  {adminStatusOptions.map((status) => (
-                                    <option key={status} value={status}>
-                                      {statusDisplayNames[status] || status}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
+                       <div className="flex flex-col space-y-1 min-w-[120px]">
+                        {["pending", "awaiting_agent_assignment"].includes(order.orderStatus) ? (
+                          <>
+                            <div className="flex space-x-1">
+                              <button
+                                onClick={() => handleQuickAccept(order.orderId)}
+                                disabled={updatingOrders[order.orderId]}
+                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm py-1 px-2 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+                                title="Accept Order"
+                              >
+                                {updatingOrders[order.orderId] ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-1 border-white"></div>
+                                ) : (
+                                  <FiCheck size={12} />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleQuickReject(order.orderId)}
+                                disabled={updatingOrders[order.orderId]}
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-2 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+                                title="Reject Order"
+                              >
+                                {updatingOrders[order.orderId] ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-1 border-white"></div>
+                                ) : (
+                                  <FiX size={12} />
+                                )}
+                              </button>
                             </div>
-                          )}
-                        </div>
+                            <span className={`text-[10px] px-0.5 py-0.5 rounded-full text-center ${getStatusColor(order.orderStatus)}`}>
+                              Pending
+                            </span>
+                          </>
+                        ) : (
+                          <div className="relative">
+                            {updatingOrders[order.orderId] ? (
+                              <div className="flex items-center justify-center py-0.5">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+                              </div>
+                            ) : (
+                              <select
+                                value={order.orderStatus}
+                                onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
+                                className={`text-[10px] px-1 py-0.5 rounded-full border ${getStatusColor(order.orderStatus)} cursor-pointer w-full`}
+                                disabled={updatingOrders[order.orderId]}
+                                title={statusDisplayNames[order.orderStatus] || order.orderStatus}
+                              >
+                                {adminStatusOptions.map((status) => (
+                                  <option key={status} value={status}>
+                                    {statusDisplayNames[status] || status}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                       </td>
                      
                       {/* Merchant Name */}
@@ -1112,7 +1075,7 @@ const OrdersTable = () => {
                           {order.restaurantId ? (
                             <Link
                               to={`/admin/dashboard/merchants/merchant-details/${order.restaurantId}`}
-                              className="text-pink-600 hover:underline text-xs font-bold"
+                              className="text-blue-600 hover:underline text-xs"
                               title={order.restaurantName}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -1120,7 +1083,7 @@ const OrdersTable = () => {
                               {truncateText(order.restaurantName, 20)}
                             </Link>
                           ) : (
-                            <span title={order.restaurantName} className="text-xs font-bold">
+                            <span title={order.restaurantName} className="text-xs">
                               {truncateText(order.restaurantName, 20)}
                             </span>
                           )}
@@ -1159,7 +1122,7 @@ const OrdersTable = () => {
                             {order.customerId ? (
                               <Link
                                 to={`/admin/dashboard/customer/${order.customerId}/details`}
-                                className="font-medium text-pink-600 hover:underline"
+                                className="font-medium text-blue-600 hover:underline"
                                 title={order.customerName}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -1239,7 +1202,7 @@ const OrdersTable = () => {
                       <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-1.5 py-0.5 rounded-full text-xs ${
                           order.deliveryType === 'express'
-                            ? 'bg-pink-100 text-pink-800'
+                            ? 'bg-orange-100 text-orange-800'
                             : order.deliveryType === 'scheduled'
                             ? 'bg-purple-100 text-purple-800'
                             : 'bg-gray-100 text-gray-800'
@@ -1285,7 +1248,7 @@ const OrdersTable = () => {
                         </p>
                         {searchQuery && (
                           <button
-                            className="text-xs text-pink-600 hover:text-pink-800"
+                            className="text-xs text-blue-600 hover:text-blue-800"
                             onClick={() => setSearchQuery("")}
                           >
                             Clear search

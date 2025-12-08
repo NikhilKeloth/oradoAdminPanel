@@ -107,42 +107,6 @@ export default function CreateOrderPage() {
     { id: "scheduled", name: "Scheduled", description: "Schedule for later delivery" }
   ];
 
-  // const [form, setForm] = useState({
-  //   customerName: "",
-  //   customerPhone: "",
-  //   customerEmail: "",
-  //   address: "",
-  //   restaurantId: "",
-  //   deliveryMode: "home_delivery",
-  //   deliveryOption: "on_demand",
-  //   preparationTime: "",
-  //   scheduledAt: "",
-  //   paymentMethod: "cash",
-  //   paymentStatus: "pending",
-  //   items: [],
-  //   deliveryCharge: 0,
-  //   discount: 0, // Flat discount
-  //   taxPercent: 0,
-  //   note: "",
-  //   tip: 0,
-  //   loyalty: 0,
-  //   promo: "",
-  //   coupon: '',
-  //   couponId: null,
-  //   couponData: null,
-  //   couponDiscount: 0,
-  //   selectedAddressId: "",
-  //   // Pickup details
-  //   pickupName: "",
-  //   pickupPhone: "",
-  //   pickupEmail: "",
-  //   additionalInfo: {
-  //     address: "",
-  //     landmark: "", 
-  //     secondaryContact: ""
-  //   }
-  // });
-
   const [form, setForm] = useState({
     customerName: "",
     customerPhone: "",
@@ -151,17 +115,17 @@ export default function CreateOrderPage() {
     restaurantId: "",
     deliveryMode: "home_delivery",
     deliveryOption: "on_demand",
-    preparationTime: "", // ADD THIS
-    scheduledAt: "", // ADD THIS
+    preparationTime: "",
+    scheduledAt: "",
     paymentMethod: "cash",
-    paymentStatus: "pending", // ADD THIS
+    paymentStatus: "pending",
     items: [],
     deliveryCharge: 0,
-    discount: 0,
+    discount: 0, // Flat discount
     taxPercent: 0,
     note: "",
     tip: 0,
-    loyalty: 0, // Loyalty points - ADD THIS
+    loyalty: 0,
     promo: "",
     coupon: '',
     couponId: null,
@@ -172,7 +136,7 @@ export default function CreateOrderPage() {
     pickupName: "",
     pickupPhone: "",
     pickupEmail: "",
-    additionalInfo: { // ADD THIS
+    additionalInfo: {
       address: "",
       landmark: "", 
       secondaryContact: ""
@@ -209,13 +173,6 @@ export default function CreateOrderPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // Reset cart when merchant or customer changes
-  useEffect(() => {
-    if (selectedMerchant || selectedCustomer) {
-      resetCart();
-    }
-  }, [selectedMerchant, selectedCustomer]);
 
   const getOrderPriceSummary = async (requestData) => {
     try {
@@ -309,8 +266,12 @@ export default function CreateOrderPage() {
       const requestData = {
         restaurantId: cartData.restaurantId,
         customerId: selectedCustomer.userId, 
-        products: cartData.products,
-        cartId: cartId // ✅ Send existing cart ID
+        products: [
+          {
+            productId: cartData.productId,
+            quantity: cartData.quantity
+          }
+        ]
       };
 
       console.log('Sending to cart/add:', requestData);
@@ -322,7 +283,7 @@ export default function CreateOrderPage() {
       });
 
       if (response.data.cart && response.data.cart._id) {
-        setCartId(response.data.cart._id); // ✅ Store the cart ID
+        setCartId(response.data.cart._id);
       }
       
       return response.data;
@@ -337,14 +298,12 @@ export default function CreateOrderPage() {
       const token = localStorage.getItem('adminToken');
       const requestData = {
         restaurantId: selectedMerchant.id,
-        customerId: selectedCustomer.userId,
         products: [
           {
             productId: productId,
             quantity: 0
           }
-        ],
-        cartId: cartId // ✅ Send existing cart ID
+        ]
       };
 
       const response = await axios.post(`${API_BASE_URL}/admin/cart/add`, requestData, {
@@ -361,7 +320,7 @@ export default function CreateOrderPage() {
     }
   };
 
-  // Main add to cart function for menu products
+  // Main add to cart function
   const addToCart = async (product, quantity) => {
     if (!selectedMerchant || !selectedCustomer) {
       alert("Please select both customer and restaurant first");
@@ -373,12 +332,8 @@ export default function CreateOrderPage() {
     try {
       const cartData = {
         restaurantId: selectedMerchant.id,
-        products: [
-          {
-            productId: product._id,
-            quantity: quantity
-          }
-        ]
+        productId: product._id,
+        quantity: quantity
       };
 
       let apiResult;
@@ -430,31 +385,6 @@ export default function CreateOrderPage() {
     } catch (error) {
       console.error('Error in addToCart:', error);
       alert('Failed to update cart. Please try again.');
-      return false;
-    }
-  };
-
-  // Add custom item to cart
-  const addCustomItemToCart = async (customItem) => {
-    if (!selectedMerchant || !selectedCustomer) {
-      alert("Please select both customer and restaurant first");
-      return false;
-    }
-
-    try {
-      // For custom items, we need to create a special product in backend or handle differently
-      // For now, we'll just update the local state and handle in the final order creation
-      setForm(prev => ({
-        ...prev,
-        items: [
-          ...prev.items,
-          customItem
-        ]
-      }));
-      return true;
-    } catch (error) {
-      console.error('Error adding custom item:', error);
-      alert('Failed to add custom item. Please try again.');
       return false;
     }
   };
@@ -554,15 +484,14 @@ export default function CreateOrderPage() {
         const customerData = response.data.data;
         setCustomerAddresses(customerData.addresses || []);
 
-        // if (customerData.addresses && customerData.addresses.length > 0 &&
-        //     form.deliveryMode !== "take_away") {
-        //   const firstAddress = customerData.addresses[0];
-        //   setForm(prev => ({
-        //     ...prev,
-        //     address: formatAddress(firstAddress),
-        //     selectedAddressId: firstAddress._id
-        //   }));
-        // }
+        if (customerData.addresses && customerData.addresses.length > 0 &&
+            form.deliveryMode !== "take_away") {
+          const firstAddress = customerData.addresses[0];
+          setForm(prev => ({
+            ...prev,
+            address: formatAddress(firstAddress)
+          }));
+        }
       }
     } catch (error) {
       console.error('Error fetching customer details:', error);
@@ -594,6 +523,8 @@ export default function CreateOrderPage() {
     }));
     setMerchantSearchTerm(merchant.name);
     setShowMerchantDropdown(false);
+    setCartId(null);
+    setForm(prev => ({ ...prev, items: [] }));
     fetchRestaurantMenu(merchant.id);
   };
 
@@ -610,14 +541,15 @@ export default function CreateOrderPage() {
     }));
     setSearchTerm(customer.name);
     setShowCustomerDropdown(false);
+    setCartId(null);
+    setForm(prev => ({ ...prev, items: [] }));
     fetchCustomerDetails(customer.userId);
   };
 
   const handleAddressSelect = (address) => {
     setForm(prev => ({
       ...prev,
-      address: formatAddress(address),
-      selectedAddressId: address._id
+      address: formatAddress(address)
     }));
     setExpandedAddress(false);
   };
@@ -626,8 +558,7 @@ export default function CreateOrderPage() {
     setForm(prev => ({
       ...prev,
       deliveryMode: mode,
-      address: mode === "take_away" ? "" : prev.address,
-      selectedAddressId: mode === "take_away" ? "" : prev.selectedAddressId
+      address: mode === "take_away" ? "" : prev.address
     }));
     setExpandedAddress(false);
   };
@@ -675,58 +606,70 @@ export default function CreateOrderPage() {
     return item ? item.qty : 0;
   };
 
-  const addBlankItem = async () => {
+  function addBlankItem() {
     if (!selectedMerchant || !selectedCustomer) {
       alert("Please select both customer and restaurant first");
       return;
     }
+    setForm((s) => ({
+      ...s,
+      items: [
+        ...s.items,
+        { 
+          id: Date.now().toString(), 
+          name: "", 
+          qty: 1, 
+          price: 0,
+          restaurantId: selectedMerchant.id,
+          customerId: selectedCustomer.userId,
+          categoryId: "custom"
+        },
+      ],
+    }));
+  }
 
-    const customItem = {
-      id: Date.now().toString(),
-      name: "",
-      qty: 1,
-      price: 0,
-      restaurantId: selectedMerchant.id,
-      customerId: selectedCustomer.userId,
-      categoryId: "custom",
-      isCustom: true // Mark as custom item
-    };
-
-    const success = await addCustomItemToCart(customItem);
-    if (success) {
-      console.log('Custom item added successfully');
+  function addProduct(productName, price = 0) {
+    if (!selectedMerchant || !selectedCustomer) {
+      alert("Please select both customer and restaurant first");
+      return;
     }
-  };
-
-  const updateItem = async (index, field, value) => {
-    const updatedItem = { ...form.items[index], [field]: value };
-    
-    // If it's a menu product (has productId), update via cart API
-    if (updatedItem.productId && !updatedItem.isCustom) {
-      if (field === 'qty') {
-        await addToCart(updatedItem, value);
+    setForm((s) => {
+      const existsIdx = s.items.findIndex((it) => it.name === productName);
+      if (existsIdx >= 0) {
+        const items = s.items.map((it, i) =>
+          i === existsIdx ? { ...it, qty: it.qty + 1 } : it
+        );
+        return { ...s, items };
       }
-    } else {
-      // For custom items, just update local state
-      const items = form.items.map((it, i) =>
-        i === index ? updatedItem : it
-      );
-      setForm((s) => ({ ...s, items }));
-    }
-  };
+      return {
+        ...s,
+        items: [
+          ...s.items,
+          { 
+            id: Date.now().toString(), 
+            name: productName, 
+            qty: 1, 
+            price: price,
+            restaurantId: selectedMerchant.id,
+            customerId: selectedCustomer.userId,
+            categoryId: "custom"
+          },
+        ],
+      };
+    });
+  }
 
-  const removeItem = async (index) => {
-    const itemToRemove = form.items[index];
-    
-    // If it's a menu product, remove via cart API
-    if (itemToRemove.productId && !itemToRemove.isCustom) {
-      await addToCart(itemToRemove, 0);
-    } else {
-      // For custom items, just remove from local state
-      const items = form.items.filter((_, i) => i !== index);
-      setForm((s) => ({ ...s, items }));
-    }
-  };
+  function updateItem(index, field, value) {
+    const items = form.items.map((it, i) =>
+      i === index ? { ...it, [field]: value } : it
+    );
+    setForm((s) => ({ ...s, items }));
+  }
+
+  function removeItem(index) {
+    const items = form.items.filter((_, i) => i !== index);
+    setForm((s) => ({ ...s, items }));
+  }
 
   const subtotal = useMemo(
     () =>
@@ -800,28 +743,25 @@ export default function CreateOrderPage() {
   };
 
   const validateStep = (step) => {
-    switch (step) {
-      case 1:
-        return selectedCustomer &&
-              (form.deliveryMode === "take_away" ||
-                (form.deliveryMode !== "take_away" && form.selectedAddressId));
-      case 2:
-        return selectedMerchant && form.items.length > 0;
-      case 3:
-        return invoiceGenerated && priceSummary !== null;
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const resetCart = () => {
-    setCartId(null);
-    setForm(prev => ({ ...prev, items: [] }));
-    setPriceSummary(null);
-    setInvoiceGenerated(false);
-  };
-
+  switch (step) {
+    case 1:
+      return selectedCustomer &&
+            (form.deliveryMode === "take_away" ||
+              (form.deliveryMode !== "take_away" && form.selectedAddressId)); // Check address ID instead of address string
+    case 2:
+      return selectedMerchant && form.items.length > 0;
+    case 3:
+      return true;
+    default:
+      return false;
+  }
+};
+const resetCart = () => {
+  setCartId(null);
+  setForm(prev => ({ ...prev, items: [] }));
+  setPriceSummary(null);
+  setInvoiceGenerated(false);
+};
   // async function handleSubmit(e) {
   //   e.preventDefault();
   //   if (currentStep !== 3) {
@@ -836,61 +776,30 @@ export default function CreateOrderPage() {
 
   //   setIsSubmitting(true);
   //   try {
-  //     // Prepare the request body for placeOrderWithAddressId
-  //     const requestBody = {
-  //       cartId: cartId, // Required
-  //       addressId: form.selectedAddressId, // Required - get from selected address
-  //       paymentMethod: form.paymentMethod, // Required - "cash" or "online"
-  //       couponCode: form.coupon || '', // Optional
-  //       instructions: form.note || '', // Optional
-  //       tipAmount: form.tip || 0 ,// Optional
-  //       customerId: selectedCustomer.userId,
-  //       isCreationbyAdmin: 1,
-  //       // Include custom items in the request
-  //       customItems: form.items.filter(item => item.isCustom).map(item => ({
-  //         name: item.name,
-  //         quantity: item.qty,
-  //         price: item.price
+  //     const payload = {
+  //       ...form,
+  //       subtotal,
+  //       tax,
+  //       total: displayTotal,
+  //       customerId: selectedCustomer?.userId,
+  //       restaurantName: selectedMerchant?.name,
+  //       merchantId: selectedMerchant?.id,
+  //       cartId: cartId,
+  //       items: form.items.map(item => ({
+  //         ...item,
+  //         restaurantId: selectedMerchant.id,
+  //         customerId: selectedCustomer.userId,
+  //         categoryId: item.categoryId || "custom"
   //       }))
   //     };
 
-  //     console.log("Order request body →", requestBody);
-
-  //     // Make API call to place order
-  //     const token = localStorage.getItem('adminToken');
-  //     const response = await axios.post(
-  //       `${API_BASE_URL}/order/place-order/by-address`,
-  //       requestBody,
-  //       {
-  //         headers: {
-  //           'Authorization': `Bearer ${token}`,
-  //           'Content-Type': 'application/json'
-  //         }
-  //       }
-  //     );
-
-  //     if (response.data.messageType === "success") {
-  //       console.log("Order created successfully:", response.data);
-        
-  //       // Handle different responses based on payment method
-  //       if (form.paymentMethod === "online" && response.data.razorpayOrderId) {
-  //         // For online payments, you'll need to handle Razorpay integration
-  //         alert("Order created! Proceed with online payment.");
-  //         // Here you would typically open Razorpay payment modal
-  //         // handleRazorpayPayment(response.data);
-  //       } else {
-  //         // For cash payments
-  //         alert("Order placed successfully!");
-  //       }
-        
-  //       navigate("/admin/dashboard/order/table");
-  //     } else {
-  //       throw new Error(response.data.message || "Failed to place order");
-  //     }
-
+  //     console.log("Order payload →", payload);
+  //     await new Promise((r) => setTimeout(r, 700));
+  //     alert("Order created successfully!");
+  //     navigate("/admin/dashboard/order/table");
   //   } catch (error) {
   //     console.error('Error creating order:', error);
-  //     alert(error.response?.data?.message || "Failed to create order. Please try again.");
+  //     alert("Failed to create order. Please try again.");
   //   } finally {
   //     setIsSubmitting(false);
   //   }
@@ -898,21 +807,6 @@ export default function CreateOrderPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
-    if (currentStep === 3) {
-      const isConfirmed = window.confirm(
-        "Are you sure you want to create this order?\n\n" +
-        "Please review:\n" +
-        `- Customer: ${selectedCustomer?.name}\n` +
-        `- Restaurant: ${selectedMerchant?.name}\n` +
-        `- Items: ${form.items.length}\n` +
-        `- Total: ₹${displayTotal.toFixed(2)}`
-      );
-      
-      if (!isConfirmed) {
-        return; // Stop if user cancels
-      }
-    }
     if (currentStep !== 3) {
       nextStep();
       return;
@@ -925,45 +819,19 @@ export default function CreateOrderPage() {
 
     setIsSubmitting(true);
     try {
-      // Prepare the request body for placeOrderWithAddressId with ALL fields
+      // Prepare the request body for placeOrderWithAddressId
       const requestBody = {
-        cartId: cartId,
-        addressId: form.selectedAddressId,
-        paymentMethod: form.paymentMethod,
-        couponCode: form.coupon || '',
-        instructions: form.note || '',
-        tipAmount: form.tip || 0,
+        cartId: cartId, // Required
+        addressId: form.selectedAddressId, // Required - get from selected address
+        paymentMethod: form.paymentMethod, // Required - "cash" or "online"
+        couponCode: form.coupon || '', // Optional
+        instructions: form.note || '', // Optional
+        tipAmount: form.tip || 0 ,// Optional
         customerId: selectedCustomer.userId,
-        isCreationbyAdmin: 1,
-        
-        // Delivery & Timing
-        deliveryMode: form.deliveryMode,
-        deliveryOption: form.deliveryOption,
-        paymentStatus: form.paymentStatus,
-        scheduledAt: form.scheduledAt || null,
-        preparationTime: form.preparationTime || '',
-        
-        // ✅✅✅ ADD THESE DISCOUNT FIELDS:
-        flatDiscount: form.discount || 0, // Flat discount amount (219)
-        couponDiscount: form.couponDiscount || 0, // Coupon discount amount (100)
-        loyaltyDiscount: form.loyalty || 0, // Loyalty discount amount (21)
-        
-        // Additional Information
-        additionalInfo: {
-          address: form.additionalInfo?.address || '',
-          landmark: form.additionalInfo?.landmark || '',
-          secondaryContact: form.additionalInfo?.secondaryContact || ''
-        },
-        
-        // Custom items
-        customItems: form.items.filter(item => item.isCustom).map(item => ({
-          name: item.name,
-          quantity: item.qty,
-          price: item.price
-        }))
+        isCreationbyAdmin: 1
       };
 
-      console.log("📦 Order request body →", requestBody);
+      console.log("Order request body →", requestBody);
 
       // Make API call to place order
       const token = localStorage.getItem('adminToken');
@@ -979,15 +847,26 @@ export default function CreateOrderPage() {
       );
 
       if (response.data.messageType === "success") {
-        console.log("✅ Order created successfully:", response.data);
-        alert("Order placed successfully!");
+        console.log("Order created successfully:", response.data);
+        
+        // Handle different responses based on payment method
+        if (form.paymentMethod === "online" && response.data.razorpayOrderId) {
+          // For online payments, you'll need to handle Razorpay integration
+          alert("Order created! Proceed with online payment.");
+          // Here you would typically open Razorpay payment modal
+          // handleRazorpayPayment(response.data);
+        } else {
+          // For cash payments
+          alert("Order placed successfully!");
+        }
+        
         navigate("/admin/dashboard/order/table");
       } else {
         throw new Error(response.data.message || "Failed to place order");
       }
 
     } catch (error) {
-      console.error('❌ Error creating order:', error);
+      console.error('Error creating order:', error);
       alert(error.response?.data?.message || "Failed to create order. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -1058,7 +937,6 @@ export default function CreateOrderPage() {
             addBlankItem={addBlankItem}
             updateItem={updateItem}
             removeItem={removeItem}
-            cartId={cartId}
           />
         );
       case 3:
@@ -1165,85 +1043,7 @@ export default function CreateOrderPage() {
               {/* TOP NAVIGATION BUTTONS */}
               <div className="bg-white rounded-xl shadow p-4 border border-orange-100">
                 <div className="flex items-center justify-between">
-                  {/* <button
-                    type="button"
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                    className={`flex items-center space-x-2 px-6 py-2 rounded-lg border transition-all ${
-                      currentStep === 1
-                        ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-orange-500 hover:text-orange-600"
-                    }`}
-                  >
-                    <FiArrowLeftIcon className="text-sm" />
-                    <span>Previous</span>
-                  </button> */}
-
                   <button
-                  type="button"
-                  onClick={prevStep}
-                  disabled={currentStep === 1}
-                  className={`flex items-center space-x-2 px-6 py-2 rounded-lg border transition-all ${
-                    currentStep === 1
-                      ? "bg-orange-50 text-orange-300 border-orange-200 cursor-not-allowed"
-                      : "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-500 hover:from-orange-600 hover:to-amber-600 shadow shadow-orange-200"
-                  }`}
-                >
-                  <FiArrowLeftIcon className="text-sm" />
-                  <span>Previous</span>
-                </button>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-600">
-                      Step {currentStep} of {steps.length}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={handleNextClick}
-                      disabled={!validateStep(currentStep)}
-                      className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-all ${
-                        validateStep(currentStep)
-                          ? currentStep === steps.length
-                            ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow shadow-green-200"
-                            : "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 shadow shadow-orange-200"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {currentStep === steps.length ? (
-                        <>
-                          {isSubmitting ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              <span>Creating Order...</span>
-                            </>
-                          ) : (
-                            <>
-                              <FiCheck className="text-sm" />
-                              <span>{!invoiceGenerated ? "Generate Invoice First" : "Create Order"}</span>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <span>Next</span>
-                          <FiArrowRight className="text-sm" />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Current Step Content */}
-              <div className="bg-white rounded-xl shadow p-6 border border-orange-100">
-                {renderStepContent()}
-              </div>
-
-              {/* BOTTOM NAVIGATION BUTTONS */}
-              {/* <div className="bg-white rounded-xl shadow p-4 border border-orange-100">
-                <div className="flex items-center justify-between">
-                 
-                   <button
                     type="button"
                     onClick={prevStep}
                     disabled={currentStep === 1}
@@ -1296,26 +1096,29 @@ export default function CreateOrderPage() {
                     </button>
                   </div>
                 </div>
-              </div> */}
+              </div>
+
+              {/* Current Step Content */}
+              <div className="bg-white rounded-xl shadow p-6 border border-orange-100">
+                {renderStepContent()}
+              </div>
 
               {/* BOTTOM NAVIGATION BUTTONS */}
               <div className="bg-white rounded-xl shadow p-4 border border-orange-100">
                 <div className="flex items-center justify-between">
-                  {/* Fixed Previous Button - Same as Top */}
                   <button
                     type="button"
                     onClick={prevStep}
                     disabled={currentStep === 1}
                     className={`flex items-center space-x-2 px-6 py-2 rounded-lg border transition-all ${
                       currentStep === 1
-                        ? "bg-orange-50 text-orange-300 border-orange-200 cursor-not-allowed"
-                        : "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-500 hover:from-orange-600 hover:to-amber-600 shadow shadow-orange-200"
+                        ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-orange-500 hover:text-orange-600"
                     }`}
                   >
                     <FiArrowLeftIcon className="text-sm" />
                     <span>Previous</span>
                   </button>
-
                   <div className="flex items-center space-x-3">
                     <span className="text-sm text-gray-600">
                       Step {currentStep} of {steps.length}
@@ -1343,7 +1146,7 @@ export default function CreateOrderPage() {
                           ) : (
                             <>
                               <FiCheck className="text-sm" />
-                              <span>{!invoiceGenerated ? "Generate Invoice First" : "Create Order"}</span>
+                              <span>Create Order</span>
                             </>
                           )}
                         </>
@@ -1383,7 +1186,6 @@ export default function CreateOrderPage() {
                           <div className="font-medium text-gray-800 text-sm truncate">{item.name}</div>
                           <div className="text-xs text-gray-600">
                             ₹{item.price} × {item.qty}
-                            {item.isCustom && <span className="ml-1 text-blue-600">(Custom)</span>}
                           </div>
                         </div>
                         <div className="text-right">
@@ -1473,7 +1275,7 @@ export default function CreateOrderPage() {
                 </div>
                 
                 {/* Cart Info */}
-                {/* {cartId && (
+                {cartId && (
                   <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="text-xs text-blue-800 font-medium">
                       Cart Active
@@ -1481,14 +1283,8 @@ export default function CreateOrderPage() {
                     <div className="text-xs text-blue-600 mt-1">
                       ID: {cartId.substring(0, 8)}...
                     </div>
-                    <div className="text-xs text-blue-500 mt-1">
-                      {form.items.filter(item => !item.isCustom).length} menu items
-                      {form.items.filter(item => item.isCustom).length > 0 && 
-                        ` + ${form.items.filter(item => item.isCustom).length} custom items`
-                      }
-                    </div>
                   </div>
-                )} */}
+                )}
                 {/* Current Step Info */}
                 <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
                   <div className="text-xs text-orange-800 font-medium">

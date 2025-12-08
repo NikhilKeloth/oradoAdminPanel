@@ -7,46 +7,32 @@ import { MapPin, Search, X, Save, Edit, Globe, Home } from "lucide-react";
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiYW1hcm5hZGg2NSIsImEiOiJjbWJ3NmlhcXgwdTh1MmlzMWNuNnNvYmZ3In0.kXrgLZhaz0cmbuCvyxOd6w';
 
-const MapComponent = ({ latitude, longitude, onSave, onAddressUpdate, initialAddress }) => {
+const MapComponent = ({ latitude, longitude, onSave, onAddressUpdate }) => {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const geocoderRef = useRef(null);
   
+  // const [selectedLocation, setSelectedLocation] = useState([longitude || 76.3000, latitude || 10.0000]);
   const [selectedLocation, setSelectedLocation] = useState(() => {
+  // Use props if they exist, otherwise use defaults
     return longitude && latitude ? [longitude, latitude] : [76.3000, 10.0000];
   });
-  
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   
-  const [addressData, setAddressData] = useState(() => {
-    if (initialAddress) {
-      return {
-        street: initialAddress.street || "",
-        city: initialAddress.city || "",
-        state: initialAddress.state || "",
-        zip: initialAddress.zip || "",
-        country: initialAddress.country || "India",
-        fullAddress: initialAddress.fullAddress || initialAddress.street || "",
-        longitude: longitude || 76.3000,
-        latitude: latitude || 10.0000
-      };
-    }
-    
-    return {
-      street: "",
-      city: "",
-      state: "",
-      zip: "",
-      country: "India",
-      fullAddress: "",
-      longitude: longitude || 76.3000,
-      latitude: latitude || 10.0000
-    };
+  const [addressData, setAddressData] = useState({
+    street: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "India",
+    fullAddress: "",
+    longitude: longitude && latitude ? longitude : 76.3000,
+    latitude: longitude && latitude ? latitude : 10.0000
   });
 
   // Initialize map
@@ -136,35 +122,10 @@ const MapComponent = ({ latitude, longitude, onSave, onAddressUpdate, initialAdd
       // Add marker if we have coordinates
       if (latitude && longitude) {
         addMarker([longitude, latitude]);
-        
-        // If we have initial address, use it instead of reverse geocoding
-        if (initialAddress) {
-          console.log("Using initial address from props:", initialAddress);
-          
-          const formattedAddress = {
-            street: initialAddress.street || "",
-            city: initialAddress.city || "",
-            state: initialAddress.state || "",
-            zip: initialAddress.zip || "",
-            country: initialAddress.country || "India",
-            fullAddress: initialAddress.fullAddress || initialAddress.street || "",
-            longitude: longitude,
-            latitude: latitude
-          };
-          
-          setAddressData(formattedAddress);
-          setSearchQuery(formattedAddress.fullAddress || formattedAddress.street || "");
-          
-          // Update parent if needed
-          if (onAddressUpdate) {
-            onAddressUpdate(formattedAddress);
-          }
-        } else {
-          // Get initial address
-          setTimeout(() => {
-            getAddressFromCoordinates(longitude, latitude);
-          }, 1000);
-        }
+        // Get initial address
+        setTimeout(() => {
+          getAddressFromCoordinates(longitude, latitude);
+        }, 1000);
       } else {
         // Center on default
         addMarker(selectedLocation);
@@ -197,10 +158,7 @@ const MapComponent = ({ latitude, longitude, onSave, onAddressUpdate, initialAdd
         duration: 1000
       });
       
-      // Only do reverse geocoding if we don't have initial address
-      if (!initialAddress) {
-        getAddressFromCoordinates(longitude, latitude);
-      }
+      getAddressFromCoordinates(longitude, latitude);
     }
   }, [latitude, longitude]);
 

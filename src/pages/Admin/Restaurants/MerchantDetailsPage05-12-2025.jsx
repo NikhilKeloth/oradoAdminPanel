@@ -31,14 +31,7 @@ import {
   Settings,
   Sparkles,
   Info,
-  FileText,
-  Percent,
-  DollarSign,
-  Layers,
-  TrendingUp,
-  CreditCard,
-  Package,
-  Truck
+  FileText
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
@@ -89,84 +82,26 @@ const MerchantDetailsPage = () => {
   const [isActive, setIsActive] = useState(false);
   const [description, setDescription] = useState("");
   const [displayAddress, setDisplayAddress] = useState("");
-  
-  // Store Type state
-  const [storeType, setStoreType] = useState("restaurant");
-
-  // Commission State - NEW
-  const [commission, setCommission] = useState({
-    main: {
-      type: "percentage", // "percentage" or "fixed"
-      value: 10,
-      saved: false
-    },
-    tiers: [
-      {
-        id: 1,
-        min: 0,
-        max: 1000,
-        type: "percentage",
-        value: 5
-      },
-      {
-        id: 2,
-        min: 1001,
-        max: 5000,
-        type: "percentage",
-        value: 7
-      },
-      {
-        id: 3,
-        min: 5001,
-        max: 10000,
-        type: "fixed",
-        value: 500
-      }
-    ],
-    saved: false
-  });
-
-  // Sponsorship State - Enhanced
-  const [sponsorship, setSponsorship] = useState({
-    isActive: false,
-    startDate: "",
-    endDate: "",
-    startTime: "09:00",
-    endTime: "17:00",
-    allDay: false
-  });
-
-  // Store Type options
-  const storeTypeOptions = [
-    { value: "restaurant", label: "🍽️ Restaurant" },
-    { value: "grocery", label: "🛒 Grocery" },
-    { value: "meat", label: "🥩 Meat Shop" },
-    { value: "pharmacy", label: "💊 Pharmacy" },
-    { value: "bakery", label: "🥐 Bakery" },
-    { value: "cafe", label: "☕ Cafe" },
-  ];
 
   useEffect(() => {
     const getMerchantDetails = async () => {
       try {
         const data = await fetchSingleRestaurantDetails(id);
-        console.log("data", data);
+
+        console.log("data",data);
         setMerchant(data);
         setImages(data.images || []);
         
         // Initialize address state from merchant data
         if (data.address) {
-          const addressData = {
+          setAddress({
             street: data.address.street || "",
             city: data.address.city || "",
             state: data.address.state || "",
             zip: data.address.zip || "",
             country: data.address.country || "India",
-            fullAddress: data.displayAddress || data.address.street || ""
-          };
-          
-          setAddress(addressData);
-          setDisplayAddress(data.displayAddress || `${addressData.street}, ${addressData.city}, ${addressData.state} ${addressData.zip}, ${addressData.country}`);
+            fullAddress: data.displayAddress || ""
+          });
         }
 
         // Initialize coordinates
@@ -180,61 +115,7 @@ const MerchantDetailsPage = () => {
         // Initialize other states
         setIsActive(data.active || false);
         setDescription(data.description || "");
-        setStoreType(data.storeType || "restaurant");
-        
-        // Initialize commission from data - NEW
-        // Initialize commission from data - NEW
-        if (data.commission_new) {
-          console.log("Loaded commission_new:", data.commission_new);
-          setCommission({
-            main: {
-              type: data.commission_new.main?.type || "percentage",
-              value: data.commission_new.main?.value || 10,
-              saved: true
-            },
-            tiers: data.commission_new.tiers?.map((tier, index) => ({
-              id: index + 1, // Add id for frontend
-              min: tier.min || 0,
-              max: tier.max || 0,
-              type: tier.type || "percentage",
-              value: tier.value || 0
-            })) || [],
-            saved: true
-          });
-        } else {
-          console.log("No commission_new found");
-        }
-
-        // Initialize sponsorship from data - Enhanced
-        // if (data.sponsorship) {
-        //   setSponsorship({
-        //     isActive: data.sponsorship.isActive || false,
-        //     startDate: data.sponsorship.startDate || "",
-        //     endDate: data.sponsorship.endDate || "",
-        //     startTime: data.sponsorship.startTime || "09:00",
-        //     endTime: data.sponsorship.endTime || "17:00",
-        //     allDay: data.sponsorship.allDay || false
-        //   });
-        // }
-
-        // Initialize sponsorship from data - Enhanced
-        if (data.sponsorshipDates && data.sponsorshipDates.length > 0) {
-          const sponsorData = data.sponsorshipDates[0];
-          setSponsorship({
-            isActive: data.isSponsored || false,
-            startDate: sponsorData.startDate ? new Date(sponsorData.startDate).toISOString().split('T')[0] : "",
-            endDate: sponsorData.endDate ? new Date(sponsorData.endDate).toISOString().split('T')[0] : "",
-            startTime: sponsorData.startTime || "09:00",
-            endTime: sponsorData.endTime || "17:00",
-            allDay: !sponsorData.startTime || !sponsorData.endTime
-          });
-        } else {
-          // Set isActive from isSponsored field even if no dates exist
-          setSponsorship(prev => ({
-            ...prev,
-            isActive: data.isSponsored || false
-          }));
-        }
+        setDisplayAddress(data.displayAddress || "");
 
         setLoading(false);
       } catch (err) {
@@ -247,37 +128,6 @@ const MerchantDetailsPage = () => {
       getMerchantDetails();
     }
   }, [id]);
-
-  // Initialize sponsorship dates with today
-  // useEffect(() => {
-  //   if (!sponsorship.startDate) {
-  //     const today = new Date().toISOString().split('T')[0];
-  //     const oneWeekLater = new Date();
-  //     oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-      
-  //     setSponsorship(prev => ({
-  //       ...prev,
-  //       startDate: today,
-  //       endDate: oneWeekLater.toISOString().split('T')[0]
-  //     }));
-  //   }
-  // }, []);
-
-  // Initialize sponsorship dates with today only if needed
-  useEffect(() => {
-    // Only set default dates if sponsorship is active but dates are not set
-    if (sponsorship.isActive && !sponsorship.startDate) {
-      const today = new Date().toISOString().split('T')[0];
-      const oneWeekLater = new Date();
-      oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-      
-      setSponsorship(prev => ({
-        ...prev,
-        startDate: today,
-        endDate: oneWeekLater.toISOString().split('T')[0]
-      }));
-    }
-  }, [sponsorship.isActive]);
 
   const fetchServiceAreas = async () => {
     setLoading(true);
@@ -313,6 +163,7 @@ const MerchantDetailsPage = () => {
       fullAddress: newAddress.fullAddress || prev.fullAddress
     }));
     
+    // Update display address when address changes
     setDisplayAddress(newAddress.fullAddress || `${newAddress.street}, ${newAddress.city}, ${newAddress.state} ${newAddress.zip}, ${newAddress.country}`);
   };
 
@@ -323,10 +174,12 @@ const MerchantDetailsPage = () => {
       longitude
     });
     console.log("Location saved:", { latitude, longitude });
+    // You can add API call here to save coordinates to backend
   };
 
   const handleImageUpload = (e) => {
     const selectedFiles = Array.from(e.target.files);
+
     const validFiles = selectedFiles.filter((file) => {
       return file.type.match("image.*") && file.size <= 5 * 1024 * 1024;
     });
@@ -356,291 +209,266 @@ const MerchantDetailsPage = () => {
       );
     } else {
       setFilesToRemove((prev) => [...prev, imageToRemove]);
-      setImages(prev => prev.filter((_, i) => i !== index));
+      setImages((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    setIsProfileSaving(true);
+  // const handleProfileSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsProfileSaving(true);
 
-    const formData = {
-      name: e.target.name.value,
-      email: e.target.email.value,
-      phone: `+91${e.target.phone.value}`,
-      isActive: isActive,
-      description: description,
-      storeType: storeType,
-      address: {
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        pincode: address.zip,
-        coordinates: [coordinates.latitude, coordinates.longitude]
-      }
-    };
+  //   const formData = {
+  //     name: e.target.name.value,
+  //     email: e.target.email.value,
+  //     phone: `+91${e.target.phone.value}`,
+  //     status: isActive,
+  //     description: description,
+  //     street: address.street,
+  //     city: address.city,
+  //     state: address.state,
+  //     zip: address.zip,
+  //     displayAddress: displayAddress || `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`,
+  //     location: {
+  //       type: "Point",
+  //       coordinates: [coordinates.longitude, coordinates.latitude]
+  //     }
+  //   };
 
-    console.log("📦 Submitting data:", JSON.stringify(formData, null, 2));
+  //   console.log("Submitting form data:", formData);
 
-    try {
-      const response = await updateRestaurantProfile(
-        merchant._id,
-        formData,
-        filesToUpload,
-        filesToRemove
-      );
+  //   try {
+  //     const response = await updateRestaurantProfile(
+  //       merchant._id,
+  //       formData,
+  //       filesToUpload,
+  //       filesToRemove
+  //     );
 
-      console.log("✅ Full API Response:", response);
+  //     if (response.success) {
+  //       alert("Restaurant profile updated successfully!");
+  //       const updatedData = await fetchSingleRestaurantDetails(id);
+  //       setMerchant(updatedData);
+  //       setImages(updatedData.images || []);
+  //       setIsActive(updatedData.active || false);
+  //       setDescription(updatedData.description || "");
+        
+  //       // Update address state with saved data
+  //       if (updatedData.address) {
+  //         setAddress({
+  //           street: updatedData.address.street || "",
+  //           city: updatedData.address.city || "",
+  //           state: updatedData.address.state || "",
+  //           zip: updatedData.address.zip || "",
+  //           country: updatedData.address.country || "India",
+  //           fullAddress: updatedData.displayAddress || ""
+  //         });
+  //       }
+
+  //       // Update coordinates
+  //       if (updatedData.location?.coordinates) {
+  //         setCoordinates({
+  //           latitude: updatedData.location.coordinates[1] || 0,
+  //           longitude: updatedData.location.coordinates[0] || 0
+  //         });
+  //       }
+
+  //       setDisplayAddress(updatedData.displayAddress || "");
+  //       setFilesToUpload([]);
+  //       setFilesToRemove([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Update failed:", error);
+  //     alert("Failed to update restaurant profile. Please try again.");
+  //   } finally {
+  //     setIsProfileSaving(false);
+  //   }
+  // };
+
+//   const handleProfileSubmit = async (e) => {
+//   e.preventDefault();
+//   setIsProfileSaving(true);
+
+//   // Prepare form data matching updateRestaurant function structure
+//   // const formData = {
+//   //   name: e.target.name.value,
+//   //   email: e.target.email.value,
+//   //   phone: `+91${e.target.phone.value}`,
+//   //   isActive: isActive, // This is the field name your backend expects
+//   //   description: description,
+    
+//   //   // Address structure for updateRestaurant
+//   //   address: {
+//   //     street: address.street,
+//   //     city: address.city,
+//   //     state: address.state,
+//   //     pincode: address.zip, // Note: backend expects pincode, not zip
+//   //     coordinates: [coordinates.latitude, coordinates.longitude]
+//   //   }
+//   // };
+
+//   const formData = {
+//   name: e.target.name.value,
+//   email: e.target.email.value,
+//   phone: `+91${e.target.phone.value}`,
+//   isActive: isActive,
+//   description: description,
+//   address: {
+//     street: address.street,
+//     city: address.city,
+//     state: address.state,
+//     pincode: address.zip, // Change 'zip' to 'pincode'
+//     coordinates: [coordinates.latitude, coordinates.longitude]
+//   }
+// };
+
+//   console.log("Submitting JSON data:", JSON.stringify(formData, null, 2));
+//   console.log("=== DEBUG: FORM DATA ===");
+//   console.log("Address object:", address); // This shows [object Object]
+//   console.log("Address JSON stringified:", JSON.stringify(address, null, 2))
+
+//   try {
+   
+    
+//     const response = await updateRestaurantProfile(
+//       merchant._id,
+//       formData // Send as plain object, not FormData
+//     );
+
+//     console.log("Full API Response:", response);
+    
+//     // Check response
+//     if (response && response.message) {
+//       alert(response.message);
       
-      if (response && response.message) {
-        alert(response.message);
+//       // Update local state with response data
+//       if (response.restaurant) {
+//         const updatedData = response.restaurant;
+//         setMerchant(updatedData);
+//         setImages(updatedData.images || []);
+//         setIsActive(updatedData.active || false); // Note: field is 'active' not 'isActive'
+//         setDescription(updatedData.description || "");
         
-        if (response.restaurant) {
-          const updatedData = response.restaurant;
-          setMerchant(updatedData);
-          setImages(updatedData.images || []);
-          setIsActive(updatedData.active || false);
-          setDescription(updatedData.description || "");
-          setStoreType(updatedData.storeType || "restaurant");
-          
-          if (updatedData.address) {
-            setAddress({
-              street: updatedData.address.street || "",
-              city: updatedData.address.city || "",
-              state: updatedData.address.state || "",
-              zip: updatedData.address.zip || "",
-              country: updatedData.address.country || "India",
-              fullAddress: updatedData.displayAddress || ""
-            });
-          }
+//         // Update address state
+//         if (updatedData.address) {
+//           setAddress({
+//             street: updatedData.address.street || "",
+//             city: updatedData.address.city || "",
+//             state: updatedData.address.state || "",
+//             zip: updatedData.address.zip || "",
+//             country: updatedData.address.country || "India",
+//             fullAddress: updatedData.displayAddress || ""
+//           });
+//         }
 
-          if (updatedData.location?.coordinates) {
-            setCoordinates({
-              latitude: updatedData.location.coordinates[1] || 0,
-              longitude: updatedData.location.coordinates[0] || 0
-            });
-          }
+//         // Update coordinates
+//         if (updatedData.location?.coordinates) {
+//           setCoordinates({
+//             latitude: updatedData.location.coordinates[1] || 0,
+//             longitude: updatedData.location.coordinates[0] || 0
+//           });
+//         }
 
-          setDisplayAddress(updatedData.displayAddress || "");
-        }
-        
-        setFilesToUpload([]);
-        setFilesToRemove([]);
-      } else {
-        throw new Error("No response message received");
-      }
-    } catch (error) {
-      console.error("❌ Update failed:", error);
-      alert(`Failed to update restaurant profile: ${error.message}`);
-    } finally {
-      setIsProfileSaving(false);
+//         setDisplayAddress(updatedData.displayAddress || "");
+//       }
+      
+//       // Clear upload/remove queues
+//       setFilesToUpload([]);
+//       setFilesToRemove([]);
+//     } else {
+//       throw new Error("No response message received");
+//     }
+//   } catch (error) {
+//     console.error("Update failed:", error);
+//     alert(`Failed to update restaurant profile: ${error.message}`);
+//   } finally {
+//     setIsProfileSaving(false);
+//   }
+// };
+  const handleProfileSubmit = async (e) => {
+  e.preventDefault();
+  setIsProfileSaving(true);
+
+  const formData = {
+    name: e.target.name.value,
+    email: e.target.email.value,
+    phone: `+91${e.target.phone.value}`,
+    isActive: isActive,
+    description: description,
+    address: {
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      pincode: address.zip,
+      coordinates: [coordinates.latitude, coordinates.longitude]
     }
   };
 
+  console.log("📦 Submitting data:", JSON.stringify(formData, null, 2));
+  console.log("📸 Files to upload:", filesToUpload.length);
+  console.log("🗑️ Files to remove:", filesToRemove.length);
+
+  try {
+    // ✅ PASS ALL THREE PARAMETERS!
+    const response = await updateRestaurantProfile(
+      merchant._id,
+      formData,
+      filesToUpload,    // <-- ADD THIS
+      filesToRemove     // <-- ADD THIS
+    );
+
+    console.log("✅ Full API Response:", response);
+    
+    if (response && response.message) {
+      alert(response.message);
+      
+      if (response.restaurant) {
+        const updatedData = response.restaurant;
+        setMerchant(updatedData);
+        setImages(updatedData.images || []);
+        setIsActive(updatedData.active || false);
+        setDescription(updatedData.description || "");
+        
+        if (updatedData.address) {
+          setAddress({
+            street: updatedData.address.street || "",
+            city: updatedData.address.city || "",
+            state: updatedData.address.state || "",
+            zip: updatedData.address.zip || "",
+            country: updatedData.address.country || "India",
+            fullAddress: updatedData.displayAddress || ""
+          });
+        }
+
+        if (updatedData.location?.coordinates) {
+          setCoordinates({
+            latitude: updatedData.location.coordinates[1] || 0,
+            longitude: updatedData.location.coordinates[0] || 0
+          });
+        }
+
+        setDisplayAddress(updatedData.displayAddress || "");
+      }
+      
+      setFilesToUpload([]);
+      setFilesToRemove([]);
+    } else {
+      throw new Error("No response message received");
+    }
+  } catch (error) {
+    console.error("❌ Update failed:", error);
+    alert(`Failed to update restaurant profile: ${error.message}`);
+  } finally {
+    setIsProfileSaving(false);
+  }
+};
   const handleServingAreaSubmit = async (e) => {
     e.preventDefault();
     alert("Serving area settings saved!");
   };
 
-  // Handle main commission changes - NEW
-  const handleMainCommissionChange = (field, value) => {
-    setCommission(prev => ({
-      ...prev,
-      main: {
-        ...prev.main,
-        [field]: value,
-        saved: false
-      }
-    }));
-  };
-
-  // Save main commission - NEW
-  const saveMainCommission = async () => {
-    try {
-      const formData = {
-         commission: {
-        main: {
-          type: commission.main.type,
-          value: commission.main.value
-          // Remove 'saved' field - it's frontend only
-        },
-        tiers: commission.tiers // Include existing tiers
-      }
-      };
-
-      console.log("Saving main commission:", formData);
-      
-      const response = await updateRestaurantProfile(
-        merchant._id,
-        formData,
-        [], // No files
-        []  // No files
-      );
-
-      if (response && response.message) {
-        alert("Main commission saved successfully!");
-        setCommission(prev => ({
-          ...prev,
-          main: { ...prev.main, saved: true }
-        }));
-      }
-    } catch (error) {
-      console.error("Error saving main commission:", error);
-      alert("Failed to save main commission");
-    }
-  };
-
-  // Handle tier commission changes - NEW
-  const handleTierChange = (tierId, field, value) => {
-    setCommission(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier =>
-        tier.id === tierId ? { ...tier, [field]: value } : tier
-      ),
-      saved: false
-    }));
-  };
-
-  // Add new tier - NEW
-  const addNewTier = () => {
-    const lastTier = commission.tiers[commission.tiers.length - 1];
-    const newId = commission.tiers.length > 0 ? Math.max(...commission.tiers.map(t => t.id)) + 1 : 1;
-    
-    setCommission(prev => ({
-      ...prev,
-      tiers: [
-        ...prev.tiers,
-        {
-          id: newId,
-          min: lastTier ? lastTier.max + 1 : 0,
-          max: lastTier ? lastTier.max + 1000 : 1000,
-          type: "percentage",
-          value: 5
-        }
-      ]
-    }));
-  };
-
-  // Remove tier - NEW
-  const removeTier = (tierId) => {
-    if (commission.tiers.length > 1) {
-      setCommission(prev => ({
-        ...prev,
-        tiers: prev.tiers.filter(tier => tier.id !== tierId)
-      }));
-    }
-  };
-
-  // Save tiered commission - NEW
-  const saveTieredCommission = async () => {
-    try {
-      const formData = {
-      commission: {
-        main: {
-          type: commission.main.type,
-          value: commission.main.value
-        },
-        tiers: commission.tiers.map(tier => ({
-          min: tier.min,
-          max: tier.max,
-          type: tier.type,
-          value: tier.value
-          // Remove 'id' field
-        }))
-      }
-    };
-      console.log("Saving tiered commission:", formData);
-      
-      const response = await updateRestaurantProfile(
-        merchant._id,
-        formData,
-        [],
-        []
-      );
-
-      if (response && response.message) {
-        alert("Tiered commission saved successfully!");
-        setCommission(prev => ({ ...prev, saved: true }));
-      }
-    } catch (error) {
-      console.error("Error saving tiered commission:", error);
-      alert("Failed to save tiered commission");
-    }
-  };
-
-  // Handle sponsorship changes - Enhanced
-  const handleSponsorshipChange = (field, value) => {
-    setSponsorship(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Save sponsorship - Enhanced
   const handleSponsorshipSubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      const formData = {
-        sponsorship: {
-          isActive: sponsorship.isActive,
-          startDate: sponsorship.startDate,
-          endDate: sponsorship.endDate,
-          startTime: sponsorship.allDay ? null : sponsorship.startTime,
-          endTime: sponsorship.allDay ? null : sponsorship.endTime,
-          allDay: sponsorship.allDay
-        }
-      };
-
-      console.log("Saving sponsorship:", formData);
-      
-      const response = await updateRestaurantProfile(
-        merchant._id,
-        formData,
-        [],
-        []
-      );
-
-      if (response && response.message) {
-        alert("Sponsorship settings saved!");
-        
-        if (response.restaurant) {
-          setMerchant(prev => ({
-            ...prev,
-            sponsorship: response.restaurant.sponsorship
-          }));
-        }
-      }
-    } catch (error) {
-      console.error("Error saving sponsorship:", error);
-      alert("Failed to save sponsorship settings");
-    }
-  };
-
-  // Calculate commission demo - NEW
-  const calculateCommissionDemo = () => {
-    const orderValue = parseFloat(document.getElementById('demoOrderValue')?.value || "1500");
-    const matchingTier = commission.tiers.find(tier => 
-      orderValue >= tier.min && orderValue <= tier.max
-    );
-
-    let commissionAmount = 0;
-    
-    if (matchingTier) {
-      if (matchingTier.type === 'percentage') {
-        commissionAmount = (orderValue * matchingTier.value) / 100;
-      } else {
-        commissionAmount = matchingTier.value;
-      }
-    } else {
-      if (commission.main.type === 'percentage') {
-        commissionAmount = (orderValue * commission.main.value) / 100;
-      } else {
-        commissionAmount = commission.main.value;
-      }
-    }
-
-    alert(`Order Value: $${orderValue}\nCommission: $${commissionAmount.toFixed(2)}\n${matchingTier ? 'Tier Applied' : 'Default Commission Applied'}`);
+    alert("Sponsorship settings saved!");
   };
 
   // Handle address field changes
@@ -650,18 +478,16 @@ const MerchantDetailsPage = () => {
       [field]: value
     }));
     
+    // Update display address when address fields change
     if (field === 'street' || field === 'city' || field === 'state' || field === 'zip') {
       const newDisplayAddress = `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
       setDisplayAddress(newDisplayAddress);
     }
   };
 
+  // Handle description change
   const handleDescriptionChange = (e) => {
     setDescription(e.target.value);
-  };
-
-  const handleStoreTypeChange = (e) => {
-    setStoreType(e.target.value);
   };
 
   useEffect(() => {
@@ -786,8 +612,6 @@ const MerchantDetailsPage = () => {
               <p className="text-pink-600 text-sm mt-1 flex items-center">
                 <Info className="h-3 w-3 mr-1" />
                 Merchant ID: {merchant._id?.slice(-8) || "N/A"}
-                <span className="mx-2">•</span>
-                <span className="capitalize">{storeType}</span>
               </p>
             </div>
           </div>
@@ -901,39 +725,6 @@ const MerchantDetailsPage = () => {
                     </label>
                     <div className="bg-gradient-to-r from-pink-50 to-rose-50 px-3 py-2.5 rounded-lg border border-pink-200 text-pink-700 font-medium capitalize">
                       {merchant.foodType || "Not specified"}
-                    </div>
-                  </div>
-
-                  {/* Store Type Dropdown */}
-                  <div className="space-y-1.5">
-                    <label className="flex items-center text-sm font-medium text-pink-800">
-                      <Building className="w-3 h-3 mr-1.5 text-pink-500" />
-                      Store Type *
-                    </label>
-                    <div className="relative">
-                      <select
-                        name="storeType"
-                        value={storeType}
-                        onChange={handleStoreTypeChange}
-                        className="w-full px-3 py-2.5 text-sm border border-pink-200 rounded-lg appearance-none focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors bg-white"
-                        required
-                      >
-                        <option value="">Select Store Type</option>
-                        {storeTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-pink-400 pointer-events-none" />
-                    </div>
-                    <div className="text-xs text-pink-600 mt-1 flex items-center">
-                      <span className="capitalize font-medium">{storeType}</span>
-                      {storeType && (
-                        <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 rounded text-xs">
-                          {storeTypeOptions.find(opt => opt.value === storeType)?.label.replace(/[^\w\s]/gi, '')}
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -1092,7 +883,6 @@ const MerchantDetailsPage = () => {
                           longitude={coordinates.longitude}
                           onSave={handleLocationSave}
                           onAddressUpdate={handleAddressUpdate}
-                          initialAddress={merchant.address}
                         />
                       </div>
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -1240,262 +1030,6 @@ const MerchantDetailsPage = () => {
             </form>
           </div>
 
-          {/* Commission Section - NEW */}
-          <div className="bg-white rounded-xl shadow-sm border border-pink-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                <CreditCard className="h-5 w-5 mr-2 text-pink-500" />
-                Commission Settings
-              </h2>
-              <p className="text-pink-600 text-sm mt-1">Configure commission structure for this merchant</p>
-            </div>
-
-            <div className="p-6">
-              {/* Main Commission */}
-              <div className="mb-8 pb-6 border-b border-pink-200">
-                <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-2 text-pink-500" />
-                  Main Commission
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="flex items-center text-sm font-medium text-pink-800">
-                        Commission Type
-                      </label>
-                      <div className="flex space-x-4">
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="commissionType"
-                            value="percentage"
-                            checked={commission.main.type === 'percentage'}
-                            onChange={(e) => handleMainCommissionChange('type', e.target.value)}
-                            className="h-4 w-4 text-pink-600 focus:ring-pink-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Percentage (%)</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="commissionType"
-                            value="fixed"
-                            checked={commission.main.type === 'fixed'}
-                            onChange={(e) => handleMainCommissionChange('type', e.target.value)}
-                            className="h-4 w-4 text-pink-600 focus:ring-pink-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Fixed Amount</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="flex items-center text-sm font-medium text-pink-800">
-                        {commission.main.type === 'percentage' ? 'Commission Percentage' : 'Fixed Commission Amount'}
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          {commission.main.type === 'percentage' ? (
-                            <Percent className="h-4 w-4 text-pink-400" />
-                          ) : (
-                            <DollarSign className="h-4 w-4 text-pink-400" />
-                          )}
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          step={commission.main.type === 'percentage' ? "0.1" : "1"}
-                          value={commission.main.value}
-                          onChange={(e) => handleMainCommissionChange('value', parseFloat(e.target.value))}
-                          className="w-full pl-10 pr-3 py-2.5 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors"
-                          placeholder={commission.main.type === 'percentage' ? "Enter percentage" : "Enter fixed amount"}
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={saveMainCommission}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                        commission.main.saved
-                          ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:shadow-lg'
-                          : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:shadow-lg transform hover:-translate-y-0.5'
-                      }`}
-                    >
-                      <Save className="w-4 h-4" />
-                      {commission.main.saved ? 'Saved ✓' : 'Save Main Commission'}
-                    </button>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg border border-pink-200 p-4">
-                    <h4 className="font-medium text-pink-800 mb-2 flex items-center">
-                      <Info className="w-4 h-4 mr-2" />
-                      About Main Commission
-                    </h4>
-                    <p className="text-sm text-pink-600">
-                      This commission will be applied to all orders that don't fall within the tiered commission ranges below.
-                    </p>
-                    <div className="mt-4 p-3 bg-white rounded border border-pink-100">
-                      <p className="text-xs text-pink-500">
-                        <span className="font-semibold">Example:</span> 
-                        {commission.main.type === 'percentage' 
-                          ? ` A $100 order will incur $${((100 * commission.main.value) / 100).toFixed(2)} commission (${commission.main.value}%).`
-                          : ` Any order will incur $${commission.main.value} commission regardless of order value.`
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tiered Commission */}
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900 flex items-center">
-                      <Layers className="h-4 w-4 mr-2 text-pink-500" />
-                      Tiered Commission
-                    </h3>
-                    <p className="text-pink-600 text-sm mt-1">
-                      <span className="font-semibold text-amber-600">Note:</span> Default commission will be applicable if amount doesn't fall within the range
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addNewTier}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:shadow-md transition-all duration-200 text-sm font-medium"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Tier
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-pink-50 to-rose-50">
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-pink-700 uppercase border-b border-pink-200">
-                          Min Order Value ($)
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-pink-700 uppercase border-b border-pink-200">
-                          Max Order Value ($)
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-pink-700 uppercase border-b border-pink-200">
-                          Commission Type
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-pink-700 uppercase border-b border-pink-200">
-                          Commission Value
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-pink-700 uppercase border-b border-pink-200">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {commission.tiers.map((tier) => (
-                        <tr key={tier.id} className="border-b border-pink-100 hover:bg-pink-50 transition-colors">
-                          <td className="px-4 py-3">
-                            <input
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={tier.min}
-                              onChange={(e) => handleTierChange(tier.id, 'min', parseInt(e.target.value))}
-                              className="w-full px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-400 outline-none"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="number"
-                              min={tier.min + 1}
-                              step="1"
-                              value={tier.max}
-                              onChange={(e) => handleTierChange(tier.id, 'max', parseInt(e.target.value))}
-                              className="w-full px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-400 outline-none"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={tier.type}
-                              onChange={(e) => handleTierChange(tier.id, 'type', e.target.value)}
-                              className="w-full px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-400 outline-none"
-                            >
-                              <option value="percentage">Percentage</option>
-                              <option value="fixed">Fixed Amount</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                {tier.type === 'percentage' ? (
-                                  <Percent className="h-4 w-4 text-pink-400" />
-                                ) : (
-                                  <DollarSign className="h-4 w-4 text-pink-400" />
-                                )}
-                              </div>
-                              <input
-                                type="number"
-                                min="0"
-                                step={tier.type === 'percentage' ? "0.1" : "1"}
-                                value={tier.value}
-                                onChange={(e) => handleTierChange(tier.id, 'value', parseFloat(e.target.value))}
-                                className="w-full pl-10 pr-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-400 outline-none"
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              type="button"
-                              onClick={() => removeTier(tier.id)}
-                              disabled={commission.tiers.length <= 1}
-                              className="px-3 py-1.5 text-sm bg-rose-100 text-rose-700 rounded hover:bg-rose-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="mt-6 flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      type="button"
-                      onClick={calculateCommissionDemo}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:shadow-md transition-all duration-200 text-sm font-medium"
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                      Test Commission Calculation
-                    </button>
-                    <input
-                      id="demoOrderValue"
-                      type="number"
-                      placeholder="Enter order value"
-                      defaultValue="1500"
-                      min="0"
-                      className="px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-400 outline-none"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={saveTieredCommission}
-                    className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
-                      commission.saved
-                        ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:shadow-lg'
-                        : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:shadow-lg transform hover:-translate-y-0.5'
-                    }`}
-                  >
-                    <Save className="w-4 h-4" />
-                    {commission.saved ? 'Tiered Commission Saved ✓' : 'Save Tiered Commission'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Serving Area Section */}
           <div className="bg-white rounded-xl shadow-sm border border-pink-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50">
@@ -1584,127 +1118,76 @@ const MerchantDetailsPage = () => {
             </div>
           </div>
 
-          {/* Sponsorship Section - Enhanced */}
+          {/* Sponsorship Section */}
           <div className="bg-white rounded-xl shadow-sm border border-pink-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center">
                 <Star className="h-5 w-5 mr-2 text-pink-500" />
                 Sponsorship
               </h2>
-              <p className="text-pink-600 text-sm mt-1">Manage restaurant sponsorship and promotions with calendar scheduling</p>
+              <p className="text-pink-600 text-sm mt-1">Manage restaurant sponsorship and promotions</p>
             </div>
 
             <form onSubmit={handleSponsorshipSubmit} className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">Enable Sponsorship</h3>
-                  <p className="text-sm text-pink-600">Feature your restaurant prominently on selected dates</p>
+                  <p className="text-sm text-pink-600">Feature your restaurant prominently</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only peer" 
-                    checked={sponsorship.isActive}
-                    onChange={(e) => handleSponsorshipChange('isActive', e.target.checked)}
-                  />
+                  <input type="checkbox" className="sr-only peer" />
                   <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-pink-500 peer-checked:to-rose-500"></div>
                 </label>
               </div>
 
-              {sponsorship.isActive && (
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allDay"
-                        checked={sponsorship.allDay}
-                        onChange={(e) => handleSponsorshipChange('allDay', e.target.checked)}
-                        className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-pink-300 rounded"
-                      />
-                      <label htmlFor="allDay" className="ml-2 text-sm text-gray-700">
-                        All day event
-                      </label>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="flex items-center text-sm font-medium text-pink-800">
+                    <Calendar className="w-3 h-3 mr-1.5 text-pink-500" />
+                    Sponsorship Dates
+                  </label>
+                  <div className="bg-pink-50 rounded-lg border border-pink-200 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
-                        <label className="flex items-center text-sm font-medium text-pink-800">
-                          <Calendar className="w-3 h-3 mr-1.5 text-pink-500" />
-                          Start Date
-                        </label>
+                        <label className="text-xs font-medium text-pink-700">Date Range</label>
                         <input
-                          type="date"
-                          value={sponsorship.startDate}
-                          onChange={(e) => handleSponsorshipChange('startDate', e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-3 py-2.5 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors"
+                          type="text"
+                          placeholder="mm/dd/yyyy - mm/dd/yyyy"
+                          className="w-full px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors bg-white"
+                          readOnly
                         />
                       </div>
-
                       <div className="space-y-1.5">
-                        <label className="flex items-center text-sm font-medium text-pink-800">
-                          <Calendar className="w-3 h-3 mr-1.5 text-pink-500" />
-                          End Date
-                        </label>
+                        <label className="text-xs font-medium text-pink-700">Start Time</label>
                         <input
-                          type="date"
-                          value={sponsorship.endDate}
-                          onChange={(e) => handleSponsorshipChange('endDate', e.target.value)}
-                          min={sponsorship.startDate}
-                          className="w-full px-3 py-2.5 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors"
+                          type="time"
+                          className="w-full px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors bg-white"
+                          placeholder="HH:MM"
                         />
                       </div>
-
-                      {!sponsorship.allDay && (
-                        <>
-                          <div className="space-y-1.5">
-                            <label className="flex items-center text-sm font-medium text-pink-800">
-                              <Clock className="w-3 h-3 mr-1.5 text-pink-500" />
-                              Start Time
-                            </label>
-                            <input
-                              type="time"
-                              value={sponsorship.startTime}
-                              onChange={(e) => handleSponsorshipChange('startTime', e.target.value)}
-                              className="w-full px-3 py-2.5 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="flex items-center text-sm font-medium text-pink-800">
-                              <Clock className="w-3 h-3 mr-1.5 text-pink-500" />
-                              End Time
-                            </label>
-                            <input
-                              type="time"
-                              value={sponsorship.endTime}
-                              onChange={(e) => handleSponsorshipChange('endTime', e.target.value)}
-                              min={sponsorship.startTime}
-                              className="w-full px-3 py-2.5 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors"
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4">
-                      <div className="flex items-start">
-                        <Info className="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="text-sm font-semibold text-blue-800 mb-1">Sponsorship Details</h4>
-                          <p className="text-xs text-blue-600">
-                            {sponsorship.allDay 
-                              ? `Sponsorship will run all day from ${new Date(sponsorship.startDate).toLocaleDateString()} to ${new Date(sponsorship.endDate).toLocaleDateString()}`
-                              : `Sponsorship will run from ${sponsorship.startTime} to ${sponsorship.endTime} daily between ${new Date(sponsorship.startDate).toLocaleDateString()} and ${new Date(sponsorship.endDate).toLocaleDateString()}`
-                            }
-                          </p>
-                        </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-pink-700">End Time</label>
+                        <input
+                          type="time"
+                          className="w-full px-3 py-2 text-sm border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition-colors bg-white"
+                          placeholder="HH:MM"
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="sorting"
+                    className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-pink-300 rounded"
+                  />
+                  <label htmlFor="sorting" className="ml-2 text-sm text-gray-700">
+                    Enable sorting for sponsored restaurants
+                  </label>
+                </div>
+              </div>
 
               {/* Form Actions */}
               <div className="mt-8 pt-6 border-t border-pink-200">

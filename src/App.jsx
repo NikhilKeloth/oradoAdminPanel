@@ -212,10 +212,10 @@ useEffect(() => {
       <Routes>
         <Route path="/" element={<Navigate to="/admin/dashboard/order/table" replace />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard/order/table" replace />} />
-        <Route 
+        {/* <Route 
   path="/admin/dashboard/order/create" 
   element={<CreateOrderPage />} 
-/>
+/> */}
         {/* <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/home" element={<Home />} />
@@ -402,6 +402,7 @@ useEffect(() => {
         <Route path="order/table" element={<OrderTable/>} />
         <Route path="order/table/details/:orderId" element={<OrderDetails/>}  />
         <Route path="add-city" element={<CityCreationMap/>}  />
+         <Route path="order/create" element={<CreateOrderPage />} />
           {/* Add more nested routes as needed */}
         </Route>
         <Route path="/restaurants/:restaurantId/orders" element={<RestaurantOrderList />} />

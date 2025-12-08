@@ -14,7 +14,9 @@ import {
   FiLogOut,
   FiClipboard,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
+  FiMoon,
+  FiSun
 } from 'react-icons/fi';
 import { FaChevronRight, FaChevronDown as FaChevronDownIcon, FaUserSecret } from 'react-icons/fa';
 import { CiDeliveryTruck } from "react-icons/ci";
@@ -25,6 +27,10 @@ import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme ? savedTheme === 'dark' : false;
+  });
   const [expandedSections, setExpandedSections] = useState({
     getStarted: true,
     dashboard: false,
@@ -51,6 +57,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   });
 
   const topLevelSections = ['getStarted', 'marketing', 'surge', 'admins', 'configure', 'settings'];
+
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => {
+      const newMode = !prev;
+      localStorage.setItem('theme', newMode ? 'dark' : 'light');
+      return newMode;
+    });
+  };
 
   const toggleSection = (section) => {
     setExpandedSections(prev => {
@@ -136,22 +150,27 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const styles = {
     sidebar: {
-      background: 'linear-gradient(180deg, #FC8019 0%, #E67300 100%)',
-      color: '#FFFFFF',
+      background: isDarkMode 
+        ? 'linear-gradient(135deg, #2D1B2D 0%, #1A0B1A 100%)'
+        : 'linear-gradient(180deg, #F8BBD9 0%, #F48FB1 100%)',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
       height: '100vh',
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
-      boxShadow: '8px 0 25px rgba(252, 128, 25, 0.4)',
-      borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+      boxShadow: isDarkMode 
+        ? '15px 0 40px rgba(0, 0, 0, 0.6), 5px 0 20px rgba(0, 0, 0, 0.4)'
+        : '8px 0 25px rgba(244, 143, 177, 0.4)',
+      borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '0 24px 24px 0',
     },
     logoSection: {
       padding: '20px 16px',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+      borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(136,14,79,0.2)'}`,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'flex-start',
-      background: 'rgba(255, 255, 255, 0.05)',
+      justifyContent: 'space-between',
+      background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.3)',
       backdropFilter: 'blur(10px)'
     },
     logo: {
@@ -178,14 +197,24 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       fontWeight: '700',
       textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
     },
+    darkModeToggle: {
+      background: 'none',
+      border: 'none',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
+      cursor: 'pointer',
+      padding: '8px',
+      borderRadius: '50%',
+      transition: 'all 0.2s ease',
+      fontSize: '18px'
+    },
     panelTitle: {
       padding: '12px 16px',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-      background: 'rgba(255, 255, 255, 0.05)'
+      borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(136,14,79,0.2)'}`,
+      background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.3)'
     },
     panelBadge: {
-      background: 'rgba(255, 255, 255, 0.9)',
-      color: '#FC8019',
+      background: isDarkMode ? 'rgba(136,14,79,0.8)' : '#880E4F',
+      color: '#FFFFFF',
       borderRadius: '8px',
       padding: '6px 12px',
       textAlign: 'center',
@@ -219,23 +248,23 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: '12px 16px',
-      background: 'rgba(255, 255, 255, 0.1)',
-      color: '#FFFFFF',
+      background: isDarkMode ? 'rgba(136,14,79,0.3)' : 'rgba(136,14,79,0.1)',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
       borderRadius: '8px',
       margin: '0 8px 4px 8px',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(136,14,79,0.1)'}`,
       fontSize: '14px',
       fontWeight: '600'
     },
     sectionHeaderHover: {
-      background: 'rgba(255, 255, 255, 0.15)',
+      background: isDarkMode ? 'rgba(136,14,79,0.4)' : 'rgba(136,14,79,0.2)',
       transform: 'translateY(-1px)',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
     },
     sectionHeaderActive: {
-      background: 'rgba(255, 255, 255, 0.2)',
+      background: isDarkMode ? 'rgba(136,14,79,0.5)' : 'rgba(136,14,79,0.3)',
       borderLeft: '3px solid #FFFFFF'
     },
     sectionContent: {
@@ -246,40 +275,44 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       display: 'flex',
       alignItems: 'center',
       padding: '10px 16px',
-      color: '#FFFFFF',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
       textDecoration: 'none',
       transition: 'all 0.2s ease',
       borderRadius: '8px',
       margin: '2px 8px',
       cursor: 'pointer',
-      background: 'rgba(255, 255, 255, 0.08)',
-      border: '1px solid rgba(255, 255, 255, 0.05)',
+      background: isDarkMode ? 'rgba(136,14,79,0.2)' : 'rgba(136,14,79,0.1)',
+      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(136,14,79,0.05)'}`,
       fontSize: '14px'
     },
     menuItemHover: {
-      background: 'rgba(255, 255, 255, 0.15)',
+      background: isDarkMode ? 'rgba(136,14,79,0.3)' : 'rgba(136,14,79,0.2)',
       transform: 'translateX(3px)',
       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
     },
     menuItemActive: {
-      background: 'rgba(255, 255, 255, 0.2)',
+      background: isDarkMode ? '#880E4F' : '#880E4F',
+      color: '#FFFFFF',
       borderLeft: '3px solid #FFFFFF',
-      transform: 'translateX(3px)'
+      transform: 'translateX(3px)',
+      boxShadow: isDarkMode 
+        ? '0 6px 20px rgba(0, 0, 0, 0.3)'
+        : '0 4px 15px rgba(136, 14, 79, 0.3)'
     },
     subMenu: {
-      background: 'rgba(255, 255, 255, 0.95)',
-      color: '#FC8019',
+      background: isDarkMode ? 'rgba(45, 27, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
       borderRadius: '8px',
       marginTop: '4px',
       padding: '6px 0',
       boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-      border: '1px solid rgba(252, 128, 25, 0.2)',
+      border: isDarkMode ? '1px solid rgba(136, 14, 79, 0.3)' : '1px solid rgba(136, 14, 79, 0.2)',
       backdropFilter: 'blur(10px)'
     },
     subMenuItem: {
       display: 'block',
       padding: '8px 16px',
-      color: '#666666',
+      color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : '#666666',
       textDecoration: 'none',
       transition: 'all 0.15s ease',
       borderRadius: '6px',
@@ -288,13 +321,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       fontWeight: '500'
     },
     subMenuItemHover: {
-      color: '#FC8019',
-      background: 'rgba(252, 128, 25, 0.08)',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
+      background: isDarkMode ? 'rgba(136, 14, 79, 0.2)' : 'rgba(136, 14, 79, 0.08)',
       transform: 'translateX(2px)'
     },
     subMenuItemActive: {
-      color: '#FC8019',
-      background: 'rgba(252, 128, 25, 0.12)',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
+      background: isDarkMode ? 'rgba(136, 14, 79, 0.3)' : 'rgba(136, 14, 79, 0.12)',
       fontWeight: '600'
     },
     icon: {
@@ -310,26 +343,26 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       flex: 1
     },
     logoutSection: {
-      borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+      borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(136,14,79,0.2)'}`,
       padding: '16px',
-      background: 'rgba(255, 255, 255, 0.05)'
+      background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.3)'
     },
     logoutButton: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      color: '#FFFFFF',
-      background: 'rgba(255, 255, 255, 0.1)',
+      color: isDarkMode ? '#FFFFFF' : '#880E4F',
+      background: isDarkMode ? 'rgba(136,14,79,0.3)' : 'rgba(136,14,79,0.1)',
       transition: 'all 0.2s ease',
       borderRadius: '8px',
       padding: '12px 14px',
       cursor: 'pointer',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(136,14,79,0.1)'}`,
       fontSize: '14px',
       fontWeight: '500'
     },
     logoutButtonHover: {
-      background: 'rgba(255, 255, 255, 0.15)',
+      background: isDarkMode ? 'rgba(136,14,79,0.4)' : 'rgba(136,14,79,0.2)',
       transform: 'translateY(-1px)',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
     }
@@ -340,10 +373,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       <div style={styles.logoSection}>
         <div style={styles.logo}>
           <div style={styles.logoIcon}>
-            <span style={{ color: '#FC8019', fontWeight: 'bold', fontSize: '16px' }}>O</span>
+            <span style={{ color: isDarkMode ? '#880E4F' : '#880E4F', fontWeight: 'bold', fontSize: '16px' }}>O</span>
           </div>
           <span style={styles.logoText}>ORADO Admin</span>
         </div>
+        <button 
+          style={styles.darkModeToggle}
+          onClick={toggleDarkMode}
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDarkMode ? <FiSun size={18} /> : <FiMoon size={18} />}
+        </button>
       </div>
 
       <div style={styles.panelTitle}>
@@ -381,7 +421,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             </div>
             {expandedSections.getStarted && (
               <div style={styles.sectionContent}>
-                <Link
+                {/* <Link
                   to=""
                   style={styles.menuItem}
                   onMouseEnter={(e) => {
@@ -399,7 +439,40 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 >
                   <FiHome style={styles.icon} />
                   <span style={styles.navText}>Home</span>
-                </Link>
+                </Link> */}
+                <Link
+  to=""
+  style={{
+    ...styles.menuItem,
+    ...(isLinkActive('') ? {
+      ...styles.menuItemActive,
+      color: '#FFFFFF'
+    } : {})
+  }}
+  onMouseEnter={(e) => {
+    if (!isLinkActive('')) {
+      e.currentTarget.style.background = styles.menuItemHover.background;
+      e.currentTarget.style.transform = styles.menuItemHover.transform;
+      e.currentTarget.style.boxShadow = styles.menuItemHover.boxShadow;
+    }
+  }}
+  onMouseLeave={(e) => {
+    if (!isLinkActive('')) {
+      e.currentTarget.style.background = styles.menuItem.background;
+      e.currentTarget.style.transform = 'none';
+      e.currentTarget.style.boxShadow = 'none';
+    }
+  }}
+>
+  <FiHome style={{
+    ...styles.icon,
+    color: isLinkActive('') ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#880E4F')
+  }} />
+  <span style={{
+    ...styles.navText,
+    color: isLinkActive('') ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#880E4F')
+  }}>Home</span>
+</Link>
 
                 <Link
                   to="order/table"

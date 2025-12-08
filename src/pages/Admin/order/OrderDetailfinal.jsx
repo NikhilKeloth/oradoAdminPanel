@@ -322,7 +322,7 @@ const OrderDetails = () => {
 
   // Edit states
   const [isEditing, setIsEditing] = useState(false);
-  // const [editingSection, setEditingSection] = useState(null);
+  const [editingSection, setEditingSection] = useState(null);
   const [showAddressMap, setShowAddressMap] = useState(false);
 
   // Real-time pricing states
@@ -398,18 +398,13 @@ const OrderDetails = () => {
   }, [fetchOrderDetails]);
 
   // Fetch real-time pricing when editing starts or items/address change
-  // useEffect(() => {
-  //   if (isEditing && editingSection === 'items') {
-  //     // Initial fetch when editing starts
-  //     fetchRealTimePricing();
-  //   }
-  // }, [isEditing, editingSection, fetchRealTimePricing]);
   useEffect(() => {
-    if (isEditing) {
-      // Fetch real-time pricing whenever editing mode is active
+    if (isEditing && editingSection === 'items') {
+      // Initial fetch when editing starts
       fetchRealTimePricing();
     }
-  }, [isEditing, fetchRealTimePricing]);
+  }, [isEditing, editingSection, fetchRealTimePricing]);
+
   const handleStatusChange = async (newStatus) => {
     if (!orderId) return;
 
@@ -440,14 +435,14 @@ const OrderDetails = () => {
   // Edit handlers
   const startEditing = (section) => {
     setIsEditing(true);
-    // setEditingSection(section);
+    setEditingSection(section);
     // Reset real-time pricing when starting to edit
     setRealTimePricing(null);
   };
 
   const cancelEditing = () => {
     setIsEditing(false);
-    // setEditingSection(null);
+    setEditingSection(null);
     // Reset edited data
     setEditedAdditionalInfo(order.additionalInfo || {});
     setEditedItems([...order.orderItems]);
@@ -533,18 +528,10 @@ const OrderDetails = () => {
   // };
 
   // Handle items update from OrderItemsSection
-  // const handleItemsUpdate = (updatedItems) => {
-  //   setEditedItems(updatedItems);
-  //   // Trigger real-time pricing update when items change
-  //   if (isEditing && editingSection === 'items') {
-  //     fetchRealTimePricing();
-  //   }
-  // };
-
   const handleItemsUpdate = (updatedItems) => {
     setEditedItems(updatedItems);
     // Trigger real-time pricing update when items change
-    if (isEditing) {
+    if (isEditing && editingSection === 'items') {
       fetchRealTimePricing();
     }
   };
@@ -860,33 +847,13 @@ const saveEditing = async () => {
     }));
     
     setIsEditing(false);
-    // setEditingSection(null);
+    setEditingSection(null);
     setRealTimePricing(null);
     toast.success('Order updated successfully');
-    await refreshOrderData();
 
   } catch (error) {
     console.error('Failed to update order:', error);
     toast.error('Failed to update order');
-  }
-};
-
-const refreshOrderData = async () => {
-  try {
-    setLoading(true); // Show loading indicator
-    const response = await getAdminOrderDetails(orderId);
-    setOrder(response);
-    if (response) {
-      // Reset all edited states to match new data
-      setEditedAdditionalInfo(response.additionalInfo || {});
-      setEditedItems(response.orderItems || []);
-      setEditedDeliveryAddress(response.deliveryAddress || {});
-    }
-  } catch (error) {
-    console.error("Error refreshing order details:", error);
-    toast.error("Failed to refresh order details");
-  } finally {
-    setLoading(false);
   }
 };
   // Handle address selection - trigger pricing update
@@ -1260,20 +1227,19 @@ const handleAddressSelect = async (addressData) => {
                   <div className="w-1.5 h-4 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full mr-2"></div>
                   Additional Information
                 </h2>
-                {/* {!isEditing && (
+                {isEditing && (
                   <button
-                    onClick={startEditing}
+                    onClick={() => startEditing('additionalInfo')}
                     className="flex items-center space-x-1 text-pink-600 hover:text-pink-700 text-xs font-medium"
                   >
                     <FiEdit2 className="w-3 h-3" />
                     <span>Edit</span>
                   </button>
-                )} */}
+                )}
               </div>
 
               <div className="p-3">
-                {/* {isEditing && editingSection === 'additionalInfo' ? ( */}
-                {isEditing ? (
+                {isEditing && editingSection === 'additionalInfo' ? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
@@ -1344,10 +1310,10 @@ const handleAddressSelect = async (addressData) => {
             <OrderItemsSection
               order={order}
               isEditing={isEditing}
-              // editingSection={editingSection}
+              editingSection={editingSection}
               editedItems={editedItems}
               setEditedItems={handleItemsUpdate}
-              // startEditing={startEditing}
+              startEditing={startEditing}
             />
             <OrderEditHistory 
                 snapshots={order.snapshots} 
@@ -1362,25 +1328,17 @@ const handleAddressSelect = async (addressData) => {
           <div className="space-y-3">
             {/* When NOT editing, show the regular OrderSummaryCards */}
             {!isEditing ? (
-              <div className="sticky top-4 space-y-3">
-                <OrderSummaryCards
-                  order={order}
-                  canAcceptReject={canAcceptReject}
-                  handleQuickAccept={handleQuickAccept}
-                  handleQuickReject={handleQuickReject}
-                  updatingStatus={updatingStatus}
-                  calculateItemsSubtotal={calculateItemsSubtotal}
-                />
-              </div>
+              <OrderSummaryCards
+                order={order}
+                canAcceptReject={canAcceptReject}
+                handleQuickAccept={handleQuickAccept}
+                handleQuickReject={handleQuickReject}
+                updatingStatus={updatingStatus}
+                calculateItemsSubtotal={calculateItemsSubtotal}
+              />
             ) : (
-              /* When editing, show Original, Updated Pricing, and Earnings - ALL STICKY */
-              <div className="sticky top-4 space-y-3">
-                {/* Original Bill Summary */}
-                <OriginalBillSummary
-                  order={order}
-                  calculateItemsSubtotal={calculateItemsSubtotal}
-                />
-                
+              /* When editing, show Real-time Pricing Summary and Original Bill Summary below */
+              <>
                 {/* Real-time Pricing Summary */}
                 <RealTimePricingSummary
                   order={order}
@@ -1388,8 +1346,14 @@ const handleAddressSelect = async (addressData) => {
                   loading={pricingLoading}
                   editedItems={editedItems}
                 />
-                
-                {/* Earnings Summary */}
+
+                {/* Original Bill Summary (moved down) */}
+                <OriginalBillSummary
+                  order={order}
+                  calculateItemsSubtotal={calculateItemsSubtotal}
+                />
+
+                {/* Keep Earnings Summary */}
                 <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/50 overflow-hidden">
                   <div className="px-3 py-2 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50">
                     <h2 className="text-sm font-bold text-gray-900 flex items-center">
@@ -1415,7 +1379,7 @@ const handleAddressSelect = async (addressData) => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>

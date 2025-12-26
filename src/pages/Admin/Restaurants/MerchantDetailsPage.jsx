@@ -722,9 +722,9 @@ const MerchantDetailsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-50 p-3">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-pink-200 shadow-sm">
+      <div className="bg-white rounded-2xl shadow-lg border border-pink-100 mb-6 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4">
           <ul className="flex space-x-1">
             <li>

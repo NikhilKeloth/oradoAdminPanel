@@ -94,6 +94,9 @@ import MerchantConfiguration from "./pages/Admin/Restaurants/MerchantConfigurati
 import RestaurantsPrepDelay from "./pages/Admin/RestaurantsPrepDelay"
 
 import MerchantCataloguePage from "./pages/Admin/Restaurants/MerchentCataloguePage";
+import CatelogTreeView from "./pages/Admin/Restaurants/CatelogTreeView";
+
+
 import GeofencePage from "./pages/Admin/configure/cityConfig/GeofencePage";
 import GeofenceAdder from "./pages/Admin/configure/cityConfig/GeofenceAdder";
 import CityList from "./pages/Admin/configure/cityConfig/CityList";
@@ -280,7 +283,10 @@ useEffect(() => {
         {/* Restuarnt */}
             <Route path="merchants/merchant-details/:id" element={<MerchantDetailsPage/>}  />
                <Route path="merchants/merchant-config/:id" element={<MerchantConfiguration/>}/>
-               <Route path="merchants/merchant-catelogue/:id" element={<MerchantCataloguePage/>}/>
+               {/* <Route path="merchants/merchant-catelogue/:id" element={<MerchantCataloguePage/>}/> */}
+               <Route path="merchants/merchant-catelogue/:id" element={<CatelogTreeView/>}/>
+
+               
 
 
 

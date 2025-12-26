@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   FiChevronDown,
   FiTrash2,
@@ -25,11 +25,8 @@ import {
   getOpeningHours, 
   updateOpeningHours,
   getBusinessHours,
-  updateBusinessHours,
-  getOrderSettings,
-  updateOrderSettings
+  updateBusinessHours 
 } from "../../../apis/adminApis/restaurantApi";
-// import axios from "axios";
 
 const MerchantConfiguration = () => {
   const { id } = useParams();
@@ -52,25 +49,8 @@ const MerchantConfiguration = () => {
   });
 
   // All other configuration states
-  const [acceptRejectOrder, setAcceptRejectOrder] = useState(true);
+  const [acceptRejectOrder, setAcceptRejectOrder] = useState(false);
   const [orderAcceptanceTime, setOrderAcceptanceTime] = useState("");
-  
-  // Order Types - SEPARATE from schedule feature
-  const [orderTypes, setOrderTypes] = useState({
-    onDemand: true,
-    schedule: false
-  });
-  
-  // Schedule Order Settings - only when schedule is enabled
-  // const [scheduleTimeSlots, setScheduleTimeSlots] = useState([
-  //   { slotDuration: "", maxOrders: "" }
-  // ]);
-
-  const [scheduleTimeSlot, setScheduleTimeSlot] = useState({
-    slotDuration: "", 
-    maxOrders: ""
-  });
-  
   const [merchantLoyalty, setMerchantLoyalty] = useState(false);
   const [showMerchantTiming, setShowMerchantTiming] = useState(false);
   const [vegNonvegStatus, setVegNonvegStatus] = useState(false);
@@ -98,7 +78,6 @@ const MerchantConfiguration = () => {
   const [loadingBusinessHours, setLoadingBusinessHours] = useState(false);
   const [savingBusinessHours, setSavingBusinessHours] = useState(false);
   const [businessHoursError, setBusinessHoursError] = useState(null);
-  const [savingOrderSettings, setSavingOrderSettings] = useState(false);
 
   // Checkout Template state
   const [checkoutFields, setCheckoutFields] = useState([
@@ -131,34 +110,6 @@ const MerchantConfiguration = () => {
     { id: 'saturday', label: 'Saturday', short: 'Sat', code: 'sat' },
     { id: 'sunday', label: 'Sunday', short: 'Sun', code: 'sun' }
   ];
-
-  // Schedule Order Time Slot Functions - UPDATED
-  // const handleAddScheduleTimeSlot = () => {
-  //   setScheduleTimeSlots([...scheduleTimeSlots, { slotDuration: "", maxOrders: "" }]);
-  // };
-
-  // const handleRemoveScheduleTimeSlot = (index) => {
-  //   setScheduleTimeSlots(scheduleTimeSlots.filter((_, i) => i !== index));
-  // };
-
-  // const handleScheduleTimeSlotChange = (index, field, value) => {
-  //   const newSlots = scheduleTimeSlots.map((slot, i) => 
-  //     i === index ? { ...slot, [field]: value } : slot
-  //   );
-  //   setScheduleTimeSlots(newSlots);
-  // };
-
-  const handleScheduleTimeSlotChange = (field, value) => {
-    setScheduleTimeSlot(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Handle order type changes
-  const handleOrderTypeChange = (type) => {
-    setOrderTypes(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-  };
 
   // Handle business hours updates
   const handleDateAvailabilityChange = (value) => {
@@ -202,12 +153,10 @@ const MerchantConfiguration = () => {
     }));
   };
 
-  // FIXED: Business hours time slot change handler
   const handleTimeSlotChange = (index, field, value) => {
     setBusinessHours(prev => {
-      const newSlots = prev.specificTimeSlots.map((slot, i) => 
-        i === index ? { ...slot, [field]: value } : slot
-      );
+      const newSlots = [...prev.specificTimeSlots];
+      newSlots[index][field] = value;
       return { ...prev, specificTimeSlots: newSlots };
     });
   };
@@ -234,144 +183,262 @@ const MerchantConfiguration = () => {
   };
 
   // Format business hours for API
-  const formatBusinessHoursForAPI = () => {
-    const { dateAvailability, timeAvailability, specificDays, specificDates, specificTimeSlots } = businessHours;
+  // const formatBusinessHoursForAPI = () => {
+  //   const { dateAvailability, timeAvailability, specificDays, specificDates, specificTimeSlots } = businessHours;
     
-    let formattedData = {
-      dateAvailability,
-      timeAvailability,
-      specificDays: dateAvailability === "specificDays" ? specificDays : [],
-      specificDates: dateAvailability === "specificDates" ? specificDates : [],
-      specificTimeSlots: []
-    };
+  //   let formattedData = {
+  //     dateAvailability,
+  //     timeAvailability,
+  //     specificDays: dateAvailability === "specificDays" ? specificDays : [],
+  //     specificDates: dateAvailability === "specificDates" ? specificDates : [],
+  //     specificTimeSlots: timeAvailability === "specificTime" ? specificTimeSlots : []
+  //   };
 
-    const validTimeSlots = specificTimeSlots.filter(slot => slot.start && slot.end);
-
-    if (validTimeSlots.length > 0) {
-      formattedData.specificTimeSlots = validTimeSlots.map(slot => ({
-        start: slot.start,
-        end: slot.end,
-        maxOrders: slot.maxOrders ? parseInt(slot.maxOrders) || null : null
-      }));
-    }
-
-    const dayBasedHours = {};
+  //   // Convert to day-based format for validation
+  //   const dayBasedHours = {};
     
-    if (dateAvailability === "everyday" || dateAvailability === "specificDays") {
-      const daysToApply = dateAvailability === "everyday" 
-        ? daysOfWeek.map(day => day.code)
-        : specificDays.map(dayId => {
-            const day = daysOfWeek.find(d => d.id === dayId);
-            return day?.code;
-          }).filter(Boolean);
+  //   if (dateAvailability === "everyday" || dateAvailability === "specificDays") {
+  //     const daysToApply = dateAvailability === "everyday" 
+  //       ? daysOfWeek.map(day => day.code)
+  //       : specificDays.map(dayId => {
+  //           const day = daysOfWeek.find(d => d.id === dayId);
+  //           return day?.code;
+  //         }).filter(Boolean);
 
-      daysToApply.forEach(dayCode => {
-        if (timeAvailability === "openAllDay") {
-          dayBasedHours[dayCode] = "00:00-23:59";
-        } else if (timeAvailability === "closedAllDay") {
-          dayBasedHours[dayCode] = "closed";
-        } else if (timeAvailability === "specificTime") {
-          if (validTimeSlots.length > 0) {
-            const timeRangesWithMax = validTimeSlots
-              .map(slot => {
-                const max = slot.maxOrders ? `:${slot.maxOrders}` : "";
-                return `${slot.start}-${slot.end}${max}`;
-              })
-              .join(',');
-            
-            dayBasedHours[dayCode] = timeRangesWithMax;
-          }
-        }
-      });
-    }
+  //     daysToApply.forEach(dayCode => {
+  //       if (timeAvailability === "openAllDay") {
+  //         dayBasedHours[dayCode] = "00:00-23:59";
+  //       } else if (timeAvailability === "closedAllDay") {
+  //         dayBasedHours[dayCode] = "closed";
+  //       } else if (timeAvailability === "specificTime") {
+  //         // Combine all time slots
+  //         const timeRanges = specificTimeSlots
+  //           .filter(slot => slot.start && slot.end)
+  //           .map(slot => `${slot.start}-${slot.end}`)
+  //           .join(',');
+          
+  //         if (timeRanges) {
+  //           dayBasedHours[dayCode] = timeRanges;
+  //         }
+  //       }
+  //     });
+  //   }
 
-    if (dateAvailability === "specificDates" && specificDates.length > 0) {
-      formattedData.dateBasedHours = {};
-      specificDates.forEach(date => {
-        if (timeAvailability === "openAllDay") {
-          formattedData.dateBasedHours[date] = "00:00-23:59";
-        } else if (timeAvailability === "closedAllDay") {
-          formattedData.dateBasedHours[date] = "closed";
-        } else if (timeAvailability === "specificTime") {
-          if (validTimeSlots.length > 0) {
-            const timeRangesWithMax = validTimeSlots
-              .map(slot => {
-                const max = slot.maxOrders ? `:${slot.maxOrders}` : "";
-                return `${slot.start}-${slot.end}${max}`;
-              })
-              .join(',');
-            
-            formattedData.dateBasedHours[date] = timeRangesWithMax;
-          }
-        }
-      });
-    }
+  //   // For specific dates, we need a different structure
+  //   if (dateAvailability === "specificDates" && specificDates.length > 0) {
+  //     formattedData.dateBasedHours = {};
+  //     specificDates.forEach(date => {
+  //       if (timeAvailability === "openAllDay") {
+  //         formattedData.dateBasedHours[date] = "00:00-23:59";
+  //       } else if (timeAvailability === "closedAllDay") {
+  //         formattedData.dateBasedHours[date] = "closed";
+  //       } else if (timeAvailability === "specificTime") {
+  //         const timeRanges = specificTimeSlots
+  //           .filter(slot => slot.start && slot.end)
+  //           .map(slot => `${slot.start}-${slot.end}`)
+  //           .join(',');
+          
+  //         if (timeRanges) {
+  //           formattedData.dateBasedHours[date] = timeRanges;
+  //         }
+  //       }
+  //     });
+  //   }
 
-    return {
-      ...formattedData,
-      dayBasedHours: Object.keys(dayBasedHours).length > 0 ? dayBasedHours : undefined
-    };
+  //   return {
+  //     ...formattedData,
+  //     dayBasedHours: Object.keys(dayBasedHours).length > 0 ? dayBasedHours : undefined
+  //   };
+  // };
+
+  // Format business hours for API
+const formatBusinessHoursForAPI = () => {
+  const { dateAvailability, timeAvailability, specificDays, specificDates, specificTimeSlots } = businessHours;
+  
+  let formattedData = {
+    dateAvailability,
+    timeAvailability,
+    specificDays: dateAvailability === "specificDays" ? specificDays : [],
+    specificDates: dateAvailability === "specificDates" ? specificDates : [],
+    specificTimeSlots: [] // Will fill this properly below
   };
 
+  // Filter valid time slots (must have start and end)
+  const validTimeSlots = specificTimeSlots.filter(slot => slot.start && slot.end);
+
+  // Always include the full structured slots if there are any valid ones
+  if (validTimeSlots.length > 0) {
+    formattedData.specificTimeSlots = validTimeSlots.map(slot => ({
+      start: slot.start,
+      end: slot.end,
+      maxOrders: slot.maxOrders ? parseInt(slot.maxOrders) || null : null // Send as number or null
+    }));
+  }
+
+  // Convert to day-based format for backward compatibility / string-based validation
+  const dayBasedHours = {};
+  
+  if (dateAvailability === "everyday" || dateAvailability === "specificDays") {
+    const daysToApply = dateAvailability === "everyday" 
+      ? daysOfWeek.map(day => day.code)
+      : specificDays.map(dayId => {
+          const day = daysOfWeek.find(d => d.id === dayId);
+          return day?.code;
+        }).filter(Boolean);
+
+    daysToApply.forEach(dayCode => {
+      if (timeAvailability === "openAllDay") {
+        dayBasedHours[dayCode] = "00:00-23:59";
+      } else if (timeAvailability === "closedAllDay") {
+        dayBasedHours[dayCode] = "closed";
+      } else if (timeAvailability === "specificTime") {
+        if (validTimeSlots.length > 0) {
+          // Format: 09:00-12:00:50,14:00-18:00:30
+          const timeRangesWithMax = validTimeSlots
+            .map(slot => {
+              const max = slot.maxOrders ? `:${slot.maxOrders}` : "";
+              return `${slot.start}-${slot.end}${max}`;
+            })
+            .join(',');
+          
+          dayBasedHours[dayCode] = timeRangesWithMax;
+        }
+      }
+    });
+  }
+
+  // For specific dates
+  if (dateAvailability === "specificDates" && specificDates.length > 0) {
+    formattedData.dateBasedHours = {};
+    specificDates.forEach(date => {
+      if (timeAvailability === "openAllDay") {
+        formattedData.dateBasedHours[date] = "00:00-23:59";
+      } else if (timeAvailability === "closedAllDay") {
+        formattedData.dateBasedHours[date] = "closed";
+      } else if (timeAvailability === "specificTime") {
+        if (validTimeSlots.length > 0) {
+          const timeRangesWithMax = validTimeSlots
+            .map(slot => {
+              const max = slot.maxOrders ? `:${slot.maxOrders}` : "";
+              return `${slot.start}-${slot.end}${max}`;
+            })
+            .join(',');
+          
+          formattedData.dateBasedHours[date] = timeRangesWithMax;
+        }
+      }
+    });
+  }
+
+  return {
+    ...formattedData,
+    dayBasedHours: Object.keys(dayBasedHours).length > 0 ? dayBasedHours : undefined
+  };
+};
+
   // Parse business hours from API response
-  const parseBusinessHoursFromAPI = (apiData) => {
-    if (!apiData || !apiData.businessHours) {
-      return {
-        dateAvailability: "everyday",
-        specificDays: [],
-        specificDates: [],
-        timeAvailability: "openAllDay",
-        specificTimeSlots: [{ start: "", end: "", maxOrders: "" }],
-        dateInput: ""
-      };
-    }
+  // const parseBusinessHoursFromAPI = (apiData) => {
+  //   if (!apiData || !apiData.businessHours) {
+  //     return businessHours; // Return default
+  //   }
 
-    const bh = apiData.businessHours;
+  //   const bh = apiData.businessHours;
+  //   const parsed = {
+  //     dateAvailability: bh.dateAvailability || "everyday",
+  //     specificDays: bh.specificDays || [],
+  //     specificDates: bh.specificDates || [],
+  //     timeAvailability: bh.timeAvailability || "openAllDay",
+  //     specificTimeSlots: bh.specificTimeSlots?.length > 0 
+  //       ? bh.specificTimeSlots 
+  //       : [{ start: "", end: "", maxOrders: "" }],
+  //     dateInput: ""
+  //   };
 
-    const parsed = {
-      dateAvailability: bh.dateAvailability || "everyday",
-      specificDays: bh.specificDays || [],
-      specificDates: bh.specificDates || [],
-      timeAvailability: bh.timeAvailability || "openAllDay",
+  //   // If we have dayBasedHours, convert to our format
+  //   if (bh.dayBasedHours && Object.keys(bh.dayBasedHours).length > 0) {
+  //     const dayCodes = Object.keys(bh.dayBasedHours);
+  //     const firstTimeSlot = bh.dayBasedHours[dayCodes[0]];
+      
+  //     if (firstTimeSlot === "00:00-23:59") {
+  //       parsed.timeAvailability = "openAllDay";
+  //     } else if (firstTimeSlot === "closed") {
+  //       parsed.timeAvailability = "closedAllDay";
+  //     } else {
+  //       parsed.timeAvailability = "specificTime";
+  //       // Parse time slots
+  //       const timeRanges = firstTimeSlot.split(',');
+  //       parsed.specificTimeSlots = timeRanges.map(range => {
+  //         const [start, end] = range.split('-');
+  //         return { start, end, maxOrders: "" };
+  //       });
+  //     }
+  //   }
+
+  //   return parsed;
+  // };
+
+  // Parse business hours from API response - FIXED
+const parseBusinessHoursFromAPI = (apiData) => {
+  if (!apiData || !apiData.businessHours) {
+    return {
+      dateAvailability: "everyday",
+      specificDays: [],
+      specificDates: [],
+      timeAvailability: "openAllDay",
       specificTimeSlots: [{ start: "", end: "", maxOrders: "" }],
       dateInput: ""
     };
+  }
 
-    if (bh.specificTimeSlots && Array.isArray(bh.specificTimeSlots) && bh.specificTimeSlots.length > 0) {
-      parsed.timeAvailability = "specificTime";
-      parsed.specificTimeSlots = bh.specificTimeSlots.map(slot => ({
-        start: slot.start || "",
-        end: slot.end || "",
-        maxOrders: slot.maxOrders != null ? String(slot.maxOrders) : ""
-      }));
-      return parsed;
-    }
+  const bh = apiData.businessHours;
 
-    if (bh.dayBasedHours && Object.keys(bh.dayBasedHours).length > 0) {
-      const firstDayValue = Object.values(bh.dayBasedHours)[0];
-
-      if (firstDayValue === "00:00-23:59") {
-        parsed.timeAvailability = "openAllDay";
-      } else if (firstDayValue === "closed") {
-        parsed.timeAvailability = "closedAllDay";
-      } else if (typeof firstDayValue === "string" && firstDayValue.includes("-")) {
-        parsed.timeAvailability = "specificTime";
-        const timeRanges = firstDayValue.split(',');
-        parsed.specificTimeSlots = timeRanges.map(range => {
-          const parts = range.trim().split(':');
-          const [start, end] = parts[0].split('-');
-          const maxOrders = parts[1] || "";
-          return { start, end, maxOrders };
-        });
-      }
-    }
-
-    if (parsed.timeAvailability === "specificTime" && parsed.specificTimeSlots.every(s => !s.start && !s.end)) {
-      parsed.specificTimeSlots = [{ start: "", end: "", maxOrders: "" }];
-    }
-
-    return parsed;
+  const parsed = {
+    dateAvailability: bh.dateAvailability || "everyday",
+    specificDays: bh.specificDays || [],
+    specificDates: bh.specificDates || [],
+    timeAvailability: bh.timeAvailability || "openAllDay",
+    specificTimeSlots: [{ start: "", end: "", maxOrders: "" }],
+    dateInput: ""
   };
+
+  // PRIORITY 1: Use structured specificTimeSlots if available
+  if (bh.specificTimeSlots && Array.isArray(bh.specificTimeSlots) && bh.specificTimeSlots.length > 0) {
+    parsed.timeAvailability = "specificTime";
+    parsed.specificTimeSlots = bh.specificTimeSlots.map(slot => ({
+      start: slot.start || "",
+      end: slot.end || "",
+      maxOrders: slot.maxOrders != null ? String(slot.maxOrders) : ""
+    }));
+    return parsed;
+  }
+
+  // PRIORITY 2: Fallback to parsing dayBasedHours string format
+  if (bh.dayBasedHours && Object.keys(bh.dayBasedHours).length > 0) {
+    const firstDayValue = Object.values(bh.dayBasedHours)[0];
+
+    if (firstDayValue === "00:00-23:59") {
+      parsed.timeAvailability = "openAllDay";
+    } else if (firstDayValue === "closed") {
+      parsed.timeAvailability = "closedAllDay";
+    } else if (typeof firstDayValue === "string" && firstDayValue.includes("-")) {
+      parsed.timeAvailability = "specificTime";
+      const timeRanges = firstDayValue.split(',');
+      parsed.specificTimeSlots = timeRanges.map(range => {
+        const parts = range.trim().split(':');
+        const [start, end] = parts[0].split('-');
+        const maxOrders = parts[1] || "";
+        return { start, end, maxOrders };
+      });
+    }
+  }
+
+  // If nothing matched, ensure at least one empty slot for "specificTime"
+  if (parsed.timeAvailability === "specificTime" && parsed.specificTimeSlots.every(s => !s.start && !s.end)) {
+    parsed.specificTimeSlots = [{ start: "", end: "", maxOrders: "" }];
+  }
+
+  return parsed;
+};
 
   // Get current availability status text
   const getAvailabilityStatus = () => {
@@ -416,6 +483,7 @@ const MerchantConfiguration = () => {
       
       if (response.success) {
         alert('Business hours saved successfully!');
+        // Refresh business hours data
         fetchBusinessHoursData();
       } else {
         setBusinessHoursError(response.message || "Failed to save business hours");
@@ -423,6 +491,7 @@ const MerchantConfiguration = () => {
     } catch (error) {
       console.error('Error saving business hours:', error);
       
+      // Check if it's a validation error from the API
       if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors.join('\n');
         setBusinessHoursError(errorMessages);
@@ -431,159 +500,6 @@ const MerchantConfiguration = () => {
       }
     } finally {
       setSavingBusinessHours(false);
-    }
-  };
-
-  // Save Order Settings - WITH AXIOS CALL
-  // const handleSaveOrderSettings = async () => {
-  //   try {
-  //     setSavingOrderSettings(true);
-      
-  //     const orderSettingsData = {
-  //       acceptRejectOrder: acceptRejectOrder,
-  //       orderAcceptanceTime: orderAcceptanceTime ? parseInt(orderAcceptanceTime) : null,
-  //       orderTypes: orderTypes,
-  //       preparationTime: preparationTime ? parseInt(preparationTime) : null,
-  //       scheduleTimeSlots: orderTypes.schedule ? scheduleTimeSlots.map(slot => ({
-  //         slotDuration: slot.slotDuration ? parseInt(slot.slotDuration) : null,
-  //         maxOrders: slot.maxOrders ? parseInt(slot.maxOrders) : null
-  //       })) : []
-  //     };
-
-  //     // Sample axios call - replace with your actual API endpoint
-
-
-  //     const response = await apiClient.patch(
-  //       `/merchants/${id}/order-settings`,
-  //       orderSettingsData,
-  //       {
-  //         headers: {
-  //           'Content-Type': 'application/json',
-  //           'Authorization': `Bearer ${localStorage.getItem('token')}`
-  //         }
-  //       }
-  //     );
-
-  //     if (response.data.success) {
-  //       alert('Order settings saved successfully!');
-  //     } else {
-  //       alert(response.data.message || 'Failed to save order settings');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error saving order settings:', error);
-  //     alert(error.response?.data?.message || 'Failed to save order settings. Please try again.');
-  //   } finally {
-  //     setSavingOrderSettings(false);
-  //   }
-  // };
-
-  // Save Order Settings - USING YOUR API PATTERN
-  // const handleSaveOrderSettings = async () => {
-  //   try {
-  //     setSavingOrderSettings(true);
-      
-  //     const orderSettingsData = {
-  //       acceptRejectOrder: acceptRejectOrder,
-  //       orderAcceptanceTime: orderAcceptanceTime ? parseInt(orderAcceptanceTime) : null,
-  //       orderTypes: orderTypes,
-  //       preparationTime: preparationTime ? parseInt(preparationTime) : null,
-  //       scheduleTimeSlots: orderTypes.schedule ? scheduleTimeSlots
-  //         .filter(slot => slot.slotDuration || slot.maxOrders)
-  //         .map(slot => ({
-  //           slotDuration: slot.slotDuration ? parseInt(slot.slotDuration) : null,
-  //           maxOrders: slot.maxOrders ? parseInt(slot.maxOrders) : null
-  //         })) : []
-  //     };
-
-  //     // Call your API function (you'll need to create this in restaurantApi.js)
-  //     const response = await updateOrderSettings(id, orderSettingsData);
-      
-  //     if (response.success) {
-  //       alert('Order settings saved successfully!');
-  //     } else {
-  //       alert(response.message || 'Failed to save order settings');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error saving order settings:', error);
-      
-  //     if (error.response?.data?.errors) {
-  //       const errorMessages = error.response.data.errors.join('\n');
-  //       alert(`Failed to save order settings:\n${errorMessages}`);
-  //     } else if (error.response?.data?.message) {
-  //       alert(error.response.data.message);
-  //     } else {
-  //       alert('Failed to save order settings. Please try again.');
-  //     }
-  //   } finally {
-  //     setSavingOrderSettings(false);
-  //   }
-  // };
-
-  const fetchOrderSettings = async () => {
-    try {
-      const response = await getOrderSettings(id);
-      if (response.success && response.data) {
-        const settings = response.data;
-        
-        if (settings.acceptRejectOrder !== undefined) {
-          setAcceptRejectOrder(settings.acceptRejectOrder);
-        }
-        if (settings.orderAcceptanceTime !== undefined) {
-          setOrderAcceptanceTime(settings.orderAcceptanceTime?.toString() || '');
-        }
-        if (settings.orderTypes) {
-          setOrderTypes(settings.orderTypes);
-        }
-        if (settings.preparationTime !== undefined) {
-          setPreparationTime(settings.preparationTime?.toString() || '');
-        }
-        if (settings.scheduleTimeSlot) {
-          setScheduleTimeSlot({
-            slotDuration: settings.scheduleTimeSlot.slotDuration?.toString() || '',
-            maxOrders: settings.scheduleTimeSlot.maxOrders?.toString() || ''
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching order settings:', error);
-    }
-  };
-
-  const handleSaveOrderSettings = async () => {
-    try {
-      setSavingOrderSettings(true);
-      
-      const orderSettingsData = {
-        acceptRejectOrder: acceptRejectOrder,
-        orderAcceptanceTime: orderAcceptanceTime ? parseInt(orderAcceptanceTime) : null,
-        orderTypes: orderTypes,
-        preparationTime: preparationTime ? parseInt(preparationTime) : null,
-        scheduleTimeSlot: orderTypes.schedule ? {
-          slotDuration: scheduleTimeSlot.slotDuration ? parseInt(scheduleTimeSlot.slotDuration) : null,
-          maxOrders: scheduleTimeSlot.maxOrders ? parseInt(scheduleTimeSlot.maxOrders) : null
-        } : null
-      };
-
-      const response = await updateOrderSettings(id, orderSettingsData);
-      
-      if (response.success) {
-        alert('Order settings saved successfully!');
-      } else {
-        alert(response.message || 'Failed to save order settings');
-      }
-    } catch (error) {
-      console.error('Error saving order settings:', error);
-      
-      if (error.response?.data?.errors) {
-        const errorMessages = error.response.data.errors.join('\n');
-        alert(`Failed to save order settings:\n${errorMessages}`);
-      } else if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert('Failed to save order settings. Please try again.');
-      }
-    } finally {
-      setSavingOrderSettings(false);
     }
   };
 
@@ -633,6 +549,7 @@ const MerchantConfiguration = () => {
       setStoreHoursData(updatedHours);
       alert('Store hours saved successfully!');
       
+      // If business hours tab is active, refresh business hours too
       if (activeTab === "business-hours") {
         fetchBusinessHoursData();
       }
@@ -658,147 +575,134 @@ const MerchantConfiguration = () => {
     }
   }, [id]);
 
-  // Add this useEffect after the other useEffect hooks:
-  useEffect(() => {
-    if (activeTab === "orders") {
-      fetchOrderSettings();
-    }
-  }, [activeTab, id]);
+  // Reusable Components with pink theme
+  // const Section = ({ title, children, collapsible = true, defaultOpen = true }) => {
+  //   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  // FIXED Section component with stable reference
-  const Section = useCallback(({ title, children, collapsible = true, defaultOpen = true }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
+  //   return (
+  //     <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-pink-100">
+  //       <div
+  //         className={`flex justify-between items-center px-4 py-3 ${collapsible ? "cursor-pointer hover:bg-pink-50" : ""} border-b bg-pink-50`}
+  //         onClick={() => collapsible && setIsOpen(!isOpen)}
+  //       >
+  //         <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+  //         {collapsible && (
+  //           <FiChevronDown className={`h-4 w-4 text-pink-600 ${isOpen ? "rotate-180" : ""}`} />
+  //         )}
+  //       </div>
+  //       {isOpen && (
+  //         <div className="p-4 bg-white">
+  //           {children}
+  //         </div>
+  //       )}
+  //     </div>
+  //   );
+  // };
+//   const Section = ({ title, children, collapsible = true, defaultOpen = true }) => {
+//   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-    const handleHeaderClick = (e) => {
-      e.stopPropagation();
-      if (collapsible) setIsOpen(prev => !prev);
-    };
+//   const handleToggle = (e) => {
+//     // Only toggle when clicking directly on the header (not children)
+//     e.stopPropagation();
+//     if (collapsible) setIsOpen(!isOpen);
+//   };
 
-    return (
-      <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-pink-100">
+//   return (
+//     <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-pink-100">
+//       <div
+//         className={`flex justify-between items-center px-4 py-3 ${collapsible ? "cursor-pointer hover:bg-pink-50" : ""} border-b bg-pink-50`}
+//         onClick={handleToggle} // Only header toggles
+//       >
+//         <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+//         {collapsible && (
+//           <FiChevronDown className={`h-4 w-4 text-pink-600 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+//         )}
+//       </div>
+//       {isOpen && (
+//         <div className="p-4 bg-white">
+//           {children}
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+const Section = ({ title, children, collapsible = true, defaultOpen = true }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  const handleHeaderClick = (e) => {
+    e.stopPropagation();
+    if (collapsible) setIsOpen(prev => !prev);
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-pink-100">
+      <div
+        className={`flex justify-between items-center px-4 py-3 select-none ${
+          collapsible ? "cursor-pointer hover:bg-pink-50" : ""
+        } border-b bg-pink-50`}
+        onClick={handleHeaderClick}
+      >
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+        {collapsible && (
+          <FiChevronDown
+            className={`h-4 w-4 text-pink-600 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        )}
+      </div>
+      {isOpen && (
         <div
-          className={`flex justify-between items-center px-4 py-3 select-none ${
-            collapsible ? "cursor-pointer hover:bg-pink-50" : ""
-          } border-b bg-pink-50`}
-          onClick={handleHeaderClick}
+          className="p-4 bg-white"
+          onClick={(e) => e.stopPropagation()} // Critical: stops bubbling from inputs
         >
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          {collapsible && (
-            <FiChevronDown
-              className={`h-4 w-4 text-pink-600 transition-transform duration-200 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          )}
+          {children}
         </div>
-        {isOpen && (
-          <div className="p-4 bg-white">
-            {children}
+      )}
+    </div>
+  );
+};
+  const Toggle = ({ checked, onChange, label, description, inline = false }) => (
+    <div className={`mb-3 ${inline ? "flex items-center justify-between" : ""}`}>
+      <div className="flex-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        {description && <p className="text-xs text-gray-500">{description}</p>}
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" checked={checked} onChange={onChange} className="sr-only peer" />
+        <div className="w-9 h-5 bg-pink-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-600"></div>
+      </label>
+    </div>
+  );
+
+  const InputField = ({ label, value, onChange, type = "text", placeholder, description, suffix, prefix }) => (
+    <div className="mb-3">
+      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      {description && <p className="text-xs text-gray-500 mb-2">{description}</p>}
+      <div className="relative">
+        {prefix && (
+          <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+            <span className="text-gray-500 text-sm">{prefix}</span>
+          </div>
+        )}
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          className={`block w-full ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''} text-sm border-pink-200 rounded focus:border-pink-500 focus:ring-pink-500`}
+          placeholder={placeholder}
+        />
+        {suffix && (
+          <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+            <span className="text-gray-500 text-sm">{suffix}</span>
           </div>
         )}
       </div>
-    );
-  }, []);
+    </div>
+  );
 
-  // FIXED Toggle component with stable reference
-  const Toggle = useCallback(({ checked, onChange, label, description, inline = false, disabled = false }) => {
-    const handleToggle = (e) => {
-      e.preventDefault();
-      if (!disabled) onChange(!checked);
-    };
-
-    return (
-      <div className={`mb-3 ${inline ? "flex items-center justify-between" : ""}`}>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-          {description && <p className="text-xs text-gray-500">{description}</p>}
-        </div>
-        <div 
-          className={`relative inline-flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          onClick={handleToggle}
-        >
-          <input 
-            type="checkbox" 
-            checked={checked} 
-            onChange={() => {}} 
-            className="sr-only peer" 
-            disabled={disabled}
-          />
-          <div className={`w-9 h-5 ${disabled ? 'bg-gray-200' : 'bg-pink-200'} rounded-full peer peer-checked:bg-pink-600 transition-colors`}>
-            <div className={`absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-4 w-4 transition-transform ${checked ? 'translate-x-4' : ''}`}></div>
-          </div>
-        </div>
-      </div>
-    );
-  }, []);
-
-  // FIXED InputField component with proper event handling
-  const InputField = useCallback(({ label, value, onChange, type = "text", placeholder, description, suffix, prefix, min, max, step }) => {
-    const inputRef = useRef(null);
-    
-    const handleChange = (e) => {
-      onChange(e.target.value);
-    };
-
-    const handleFocus = (e) => {
-      // Prevent page jump by keeping scroll position
-      const currentScroll = window.pageYOffset;
-      setTimeout(() => {
-        window.scrollTo(0, currentScroll);
-      }, 0);
-    };
-
-    const handleKeyDown = (e) => {
-      if (type === 'number' || type === 'text') {
-        // Allow: backspace, delete, tab, escape, enter
-        if ([46, 8, 9, 27, 13].includes(e.keyCode) ||
-            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-            (e.keyCode === 65 && e.ctrlKey === true) || 
-            (e.keyCode === 67 && e.ctrlKey === true) ||
-            (e.keyCode === 86 && e.ctrlKey === true) ||
-            (e.keyCode === 88 && e.ctrlKey === true) ||
-            // Allow: home, end, left, right
-            (e.keyCode >= 35 && e.keyCode <= 39)) {
-          return;
-        }
-      }
-    };
-
-    return (
-      <div className="mb-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-        {description && <p className="text-xs text-gray-500 mb-2">{description}</p>}
-        <div className="relative">
-          {prefix && (
-            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-              <span className="text-gray-500 text-sm">{prefix}</span>
-            </div>
-          )}
-          <input
-            ref={inputRef}
-            type={type}
-            value={value}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            onKeyDown={handleKeyDown}
-            className={`block w-full ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''} text-sm border-pink-200 rounded focus:border-pink-500 focus:ring-pink-500 focus:ring-1`}
-            placeholder={placeholder}
-            min={min}
-            max={max}
-            step={step}
-            onWheel={(e) => e.target.blur()}
-          />
-          {suffix && (
-            <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
-              <span className="text-gray-500 text-sm">{suffix}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }, []);
-
-  const RadioGroup = useCallback(({ label, options, selected, onChange }) => (
+  const RadioGroup = ({ label, options, selected, onChange }) => (
     <div className="mb-3">
       {label && <label className="block text-xs font-medium text-gray-700 mb-2">{label}</label>}
       <div className="flex flex-wrap gap-2">
@@ -817,7 +721,7 @@ const MerchantConfiguration = () => {
         ))}
       </div>
     </div>
-  ), []);
+  );
 
   // Tabs
   const tabs = [
@@ -1038,7 +942,7 @@ const MerchantConfiguration = () => {
                       <div className="flex flex-wrap gap-2">
                         {businessHours.specificDates.map((date, index) => (
                           <span
-                            key={`date-${index}`}
+                            key={index}
                             className="inline-flex items-center px-3 py-1 rounded-lg text-xs bg-pink-100 text-pink-800 border border-pink-200"
                           >
                             {new Date(date).toLocaleDateString('en-US', { 
@@ -1061,7 +965,7 @@ const MerchantConfiguration = () => {
               )}
             </Section>
 
-            {/* Time Availability - FIXED INPUTS */}
+            {/* Time Availability */}
             <Section title="Time Availability" defaultOpen={true}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -1087,7 +991,7 @@ const MerchantConfiguration = () => {
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Configure Time Slots:</h4>
                   <div className="space-y-3">
                     {businessHours.specificTimeSlots.map((slot, index) => (
-                      <div key={`business-slot-${index}-${slot.start}-${slot.end}`} className="flex items-center space-x-3 p-3 bg-pink-50 rounded-lg border border-pink-200">
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-pink-50 rounded-lg border border-pink-200">
                         <div className="flex-1 grid grid-cols-3 gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-500 mb-1">Start Time</label>
@@ -1110,11 +1014,9 @@ const MerchantConfiguration = () => {
                           <div>
                             <label className="block text-xs font-medium text-gray-500 mb-1">Max Orders</label>
                             <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
+                              type="number"
                               value={slot.maxOrders}
-                              onChange={(e) => handleTimeSlotChange(index, 'maxOrders', e.target.value.replace(/[^0-9]/g, ''))}
+                              onChange={(e) => handleTimeSlotChange(index, 'maxOrders', e.target.value)}
                               placeholder="No limit"
                               className="w-full text-sm border-pink-200 rounded focus:border-pink-500 focus:ring-pink-500"
                             />
@@ -1174,7 +1076,7 @@ const MerchantConfiguration = () => {
           </div>
         )}
 
-        {/* Order Settings Tab - UPDATED STRUCTURE */}
+        {/* Order Settings Tab */}
         {activeTab === "orders" && (
           <div className="space-y-4">
             <Section title="Accept/Reject Order" defaultOpen={true}>
@@ -1183,7 +1085,6 @@ const MerchantConfiguration = () => {
                 onChange={() => setAcceptRejectOrder(!acceptRejectOrder)}
                 label="Manual Order Acceptance"
                 description="Merchant must manually accept each order"
-                disabled={true}
               />
               {acceptRejectOrder && (
                 <div className="mt-3 p-3 bg-pink-50 rounded-lg border border-pink-200">
@@ -1192,93 +1093,14 @@ const MerchantConfiguration = () => {
                   </p>
                   <InputField
                     label="Order Acceptance Time (Minutes)"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
+                    type="number"
                     value={orderAcceptanceTime}
-                    onChange={(value) => setOrderAcceptanceTime(value.replace(/[^0-9]/g, ''))}
+                    onChange={(e) => setOrderAcceptanceTime(e.target.value)}
                     placeholder="Enter minutes"
                   />
                 </div>
               )}
             </Section>
-
-            {/* ORDER TYPES SECTION - SEPARATE FROM SCHEDULE SETTINGS */}
-            <Section title="Order Types" defaultOpen={true}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">On Demand Orders</label>
-                    <p className="text-xs text-gray-500">Customers can place orders for immediate fulfillment</p>
-                  </div>
-                  <Toggle
-                    checked={orderTypes.onDemand}
-                    onChange={() => handleOrderTypeChange('onDemand')}
-                    inline
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Scheduled Orders</label>
-                    <p className="text-xs text-gray-500">Customers can schedule orders for specific time slots</p>
-                  </div>
-                  <Toggle
-                    checked={orderTypes.schedule}
-                    onChange={() => handleOrderTypeChange('schedule')}
-                    inline
-                  />
-                </div>
-              </div>
-            </Section>
-
-            {/* SCHEDULE ORDER SETTINGS - Only show when schedule is enabled */}
-            {orderTypes.schedule && (
-                <Section title="Schedule Order Settings" defaultOpen={true}>
-                  <div className="mt-4">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Configure Schedule Time Slot:</h4>
-                    <p className="text-xs text-gray-500 mb-3">Set time slot for scheduled orders</p>
-                    
-                    <div className="space-y-3">
-                      <div className="p-3 bg-white rounded-lg border border-pink-200">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Slot Duration (minutes)</label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={scheduleTimeSlot.slotDuration}
-                              onChange={(e) => handleScheduleTimeSlotChange('slotDuration', e.target.value.replace(/[^0-9]/g, ''))}
-                              placeholder="e.g., 30"
-                              className="w-full text-sm border-pink-200 rounded focus:border-pink-500 focus:ring-pink-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Max Orders per Slot</label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={scheduleTimeSlot.maxOrders}
-                              onChange={(e) => handleScheduleTimeSlotChange('maxOrders', e.target.value.replace(/[^0-9]/g, ''))}
-                              placeholder="No limit"
-                              className="w-full text-sm border-pink-200 rounded focus:border-pink-500 focus:ring-pink-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                      <p className="text-xs text-blue-700">
-                        <strong>Note:</strong> Slot duration determines how far apart customers can schedule orders. 
-                        For example, 30-minute slots mean orders can be scheduled at 9:00, 9:30, 10:00, etc.
-                      </p>
-                    </div>
-                  </div>
-                </Section>
-              )}
 
             <Section title="Workflow" defaultOpen={true}>
               <Toggle
@@ -1304,45 +1126,15 @@ const MerchantConfiguration = () => {
             <Section title="Preparation Time" defaultOpen={true}>
               <InputField
                 label="Preparation Time (minutes)"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="number"
                 value={preparationTime}
-                onChange={(value) => setPreparationTime(value.replace(/[^0-9]/g, ''))}
+                onChange={(e) => setPreparationTime(e.target.value)}
                 placeholder="Enter preparation time"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Note: Default preparation time for orders
               </p>
             </Section>
-
-            {/* Save Button for Order Settings */}
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleSaveOrderSettings}
-                disabled={savingOrderSettings}
-                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                  savingOrderSettings 
-                    ? 'bg-pink-400 cursor-not-allowed' 
-                    : 'bg-pink-600 hover:bg-pink-700'
-                }`}
-              >
-                {savingOrderSettings ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <FiSave className="mr-2 h-4 w-4" />
-                    Save Order Settings
-                  </>
-                )}
-              </button>
-            </div>
           </div>
         )}
 
@@ -1434,10 +1226,9 @@ const MerchantConfiguration = () => {
             <Section title="Minimum Order Amount" defaultOpen={true}>
               <InputField
                 label="Minimum Order Amount"
-                type="text"
-                inputMode="decimal"
+                type="number"
                 value={minOrderAmount}
-                onChange={(value) => setMinOrderAmount(value.replace(/[^0-9.]/g, ''))}
+                onChange={(e) => setMinOrderAmount(e.target.value)}
                 placeholder="Enter amount"
                 prefix="₹"
               />
@@ -1446,11 +1237,9 @@ const MerchantConfiguration = () => {
             <Section title="Maximum Order Per Slot" defaultOpen={true}>
               <InputField
                 label="Maximum Order Per Slot"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="number"
                 value={maxOrderPerSlot}
-                onChange={(value) => setMaxOrderPerSlot(value.replace(/[^0-9]/g, ''))}
+                onChange={(e) => setMaxOrderPerSlot(e.target.value)}
                 placeholder="Don't set any value for no limit"
               />
             </Section>
@@ -1498,11 +1287,9 @@ const MerchantConfiguration = () => {
                   Time (in mins) before notification appears to Merchant
                 </p>
                 <InputField
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                  type="number"
                   value={merchantReminder}
-                  onChange={(value) => setMerchantReminder(value.replace(/[^0-9]/g, ''))}
+                  onChange={(e) => setMerchantReminder(e.target.value)}
                   placeholder="Enter minutes"
                   suffix="minutes"
                 />
@@ -1513,11 +1300,9 @@ const MerchantConfiguration = () => {
                   Time (in mins) before notification appears to Customer
                 </p>
                 <InputField
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                  type="number"
                   value={customerReminder}
-                  onChange={(value) => setCustomerReminder(value.replace(/[^0-9]/g, ''))}
+                  onChange={(e) => setCustomerReminder(e.target.value)}
                   placeholder="Enter minutes"
                   suffix="minutes"
                 />
@@ -1540,11 +1325,9 @@ const MerchantConfiguration = () => {
                 <div className="mt-3">
                   <InputField
                     label="Buffer before first slot (minutes)"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
+                    type="number"
                     value={bufferTime}
-                    onChange={(value) => setBufferTime(value.replace(/[^0-9]/g, ''))}
+                    onChange={(e) => setBufferTime(e.target.value)}
                     placeholder="Enter minutes"
                     suffix="minutes"
                   />
@@ -1566,7 +1349,7 @@ const MerchantConfiguration = () => {
                 label="Redirect URL"
                 type="url"
                 value={redirectUrl}
-                onChange={setRedirectUrl}
+                onChange={(e) => setRedirectUrl(e.target.value)}
                 placeholder="https://example.com"
                 description="URL for redirection from merchants listing page"
               />
@@ -1590,6 +1373,18 @@ const MerchantConfiguration = () => {
             </Section>
           </div>
         )}
+
+        {/* Global Save Button */}
+        <div className="mt-8 flex justify-end space-x-3">
+          <button className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
+            <FiX className="mr-2 h-4 w-4" />
+            Cancel
+          </button>
+          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
+            <FiSave className="mr-2 h-4 w-4" />
+            Save All Changes
+          </button>
+        </div>
       </div>
     </div>
   );

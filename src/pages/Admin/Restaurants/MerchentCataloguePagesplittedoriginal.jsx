@@ -10,16 +10,12 @@ import ImportCategoriesModal from "../../../components/catelog/ImportCategoriesM
 import BulkEditCategoriesModal from "../../../components/catelog/BulkEditCategoriesModal";
 import ImportProductsModal from "../../../components/catelog/ImportProductsModal";
 import BulkEditProductsModal from "../../../components/catelog/BulkEditProductsModal";
-import CreateSubCategoryModal from "../../../components/catelog/CreateSubCategoryModal";
 
 // New Components
 import CategoriesColumn from "./CategoriesColumn";
 import ProductsColumn from "./ProductsColumn";
 import ProductDetails from "./ProductDetails";
 import Header from "./Header";
-
-import SubCategoriesColumn from "./SubCategoriesColumn";
-
 
 // API functions
 import {
@@ -56,14 +52,6 @@ function CatelogManagement() {
   const [products, setProducts] = useState([]);
   const [categoryDropdown, setCategoryDropdown] = useState(null);
   const [productDropdown, setProductDropdown] = useState(null);
-  const [showSubCategoryToggle, setShowSubCategoryToggle] = useState(false);
-  const [subCategories, setSubCategories] = useState([]);
-  const [selectedSubCategory, setSelectedSubCategory] = useState(null);
-  const [subCategoryDropdown, setSubCategoryDropdown] = useState(null);
-  const [isSubCategoryModalOpen, setIsSubCategoryModalOpen] = useState(false);
-  const [isEditSubCategoryModalOpen, setIsEditSubCategoryModalOpen] = useState(false);
-  const [editingSubCategory, setEditingSubCategory] = useState(null);
-  const [deleteSubCategoryId, setDeleteSubCategoryId] = useState(null);
   const [loading, setLoading] = useState({
     categories: false,
     products: false,
@@ -71,7 +59,6 @@ function CatelogManagement() {
     actions: false,
     categoryCreate: false,
     categoryEdit: false,
-    subcategories: false
   });
   const [error, setError] = useState({
     categories: null,
@@ -141,8 +128,6 @@ function CatelogManagement() {
     restaurantId: product.restaurantId,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
-    // categoryId: product.categoryId,
-    subcategoryId: product.subcategoryId || null
   });
 
   const formatCategory = (category) => ({
@@ -755,47 +740,6 @@ function CatelogManagement() {
     }
   };
 
-  // Subcategory Handlers
-const handleSubCategoryCreate = async (subCategoryData) => {
-  try {
-    setLoading(prev => ({ ...prev, subcategories: true }));
-    // TODO: Add your API call here
-    // Example: const response = await createSubCategory({...subCategoryData, categoryId: selectedCategory});
-    // const formatted = formatSubCategory(response.data);
-    // setSubCategories(prev => [...prev, formatted]);
-    toast.success("Subcategory created successfully");
-    setIsSubCategoryModalOpen(false);
-  } catch (err) {
-    toast.error("Failed to create subcategory");
-  } finally {
-    setLoading(prev => ({ ...prev, subcategories: false }));
-  }
-};
-
-const handleSubCategoryDelete = async (subCategoryId) => {
-  try {
-    // TODO: Add your API call here
-    // await deleteSubCategory(subCategoryId);
-    setSubCategories(prev => prev.filter(sc => sc._id !== subCategoryId));
-    toast.success("Subcategory deleted successfully");
-  } catch (error) {
-    toast.error("Failed to delete subcategory");
-  }
-};
-
-// Toggle for subcategory dropdown
-const toggleSubCategoryDropdown = (subCategoryId, e) => {
-  e.stopPropagation();
-  const rect = e.currentTarget.getBoundingClientRect();
-  setDropdownPosition({
-    top: rect.bottom + window.scrollY,
-    left: rect.left - 150,
-  });
-  setSubCategoryDropdown(subCategoryDropdown === subCategoryId ? null : subCategoryId);
-  setCategoryDropdown(null);
-  setProductDropdown(null);
-};
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* ALL MODALS FROM ORIGINAL */}
@@ -863,25 +807,12 @@ const toggleSubCategoryDropdown = (subCategoryId, e) => {
             : "This product will be permanently removed from your menu and cannot be recovered."
         }
       />
-      {isSubCategoryModalOpen && (
-        <CreateSubCategoryModal
-          categoryId={selectedCategory}
-          restaurantId={id}
-          onSuccess={handleSubCategoryCreate}
-          onClose={() => setIsSubCategoryModalOpen(false)}
-          loading={loading.subcategories}
-        />
-      )}
 
       {/* Header with navigation */}
       <Header restaurant={restaurant} id={id} location={location} />
 
       <div className="w-full mx-auto p-4 sm:p-6">
-        {/* <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[700px]"> */}
-
-        <div className={`grid grid-cols-1 gap-6 min-h-[700px] ${
-            showSubCategoryToggle ? 'lg:grid-cols-15' : 'lg:grid-cols-12'
-          }`}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[700px]">
           {/* Categories Column */}
           <div className="lg:col-span-3">
             <CategoriesColumn
@@ -905,32 +836,6 @@ const toggleSubCategoryDropdown = (subCategoryId, e) => {
               setIsCategoryModalOpen={setIsCategoryModalOpen}
             />
           </div>
-
-          {showSubCategoryToggle && (
-  <div className="lg:col-span-3">
-    <SubCategoriesColumn
-      subCategories={subCategories}
-      selectedSubCategory={selectedSubCategory}
-      setSelectedSubCategory={setSelectedSubCategory}
-      subCategoryDropdown={subCategoryDropdown}
-      setSubCategoryDropdown={setSubCategoryDropdown}
-      toggleSubCategoryDropdown={toggleSubCategoryDropdown}
-      dropdownPosition={dropdownPosition}
-      setDeleteSubCategoryId={setDeleteSubCategoryId}
-      setDeleteMode={setDeleteMode}
-      setShowModal={setShowModal}
-      setEditingSubCategory={setEditingSubCategory}
-      setIsEditSubCategoryModalOpen={setIsEditSubCategoryModalOpen}
-      setIsSubCategoryModalOpen={setIsSubCategoryModalOpen}
-      setIsProductModalOpen={setIsProductModalOpen}
-      handleArchiveSubCategory={() => {}}
-      handleUnarchiveSubCategory={() => {}}
-      handleDisableSubCategory={() => {}}
-      handleEnableSubCategory={() => {}}
-      loading={loading.subcategories}
-    />
-  </div>
-)}
 
           {/* Products Column */}
           <div className="lg:col-span-3">
@@ -960,11 +865,6 @@ const toggleSubCategoryDropdown = (subCategoryId, e) => {
               setIsProductImportModalOpen={setIsProductImportModalOpen}
               setIsBulkProductModalOpen={setIsBulkProductModalOpen}
               handleExportProduct={handleExportProduct}
-              showSubCategoryToggle={showSubCategoryToggle}
-              setShowSubCategoryToggle={setShowSubCategoryToggle}
-              subCategories={subCategories}
-              selectedSubCategory={selectedSubCategory}
-              setSelectedSubCategory={setSelectedSubCategory}
               id={id}
             />
           </div>

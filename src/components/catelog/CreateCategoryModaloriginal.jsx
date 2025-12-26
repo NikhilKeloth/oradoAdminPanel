@@ -40,135 +40,61 @@ const CreateCategoryModal = ({
     }
   }, [isEditMode, initialData]);
 
-  // const handleSubmit = (event) => {
-  //   event.preventDefault();
-  //   setError(null);
-    
-  //   if (!name.trim()) {
-  //     setError('Category name is required');
-  //     return;
-  //   }
-
-  //   // Validate time range
-  //   if (availability === 'time-range') {
-  //     if (!availableFromTime || !availableToTime) {
-  //       setError('Both start time and end time are required for time range availability');
-  //       return;
-  //     }
-  //     if (availableFromTime >= availableToTime) {
-  //       setError('End time must be after start time');
-  //       return;
-  //     }
-  //   }
-
-  //   // Validate time-based
-  //   if (availability === 'time-based' && !availableAfterTime) {
-  //     setError('Available after time is required for time-based availability');
-  //     return;
-  //   }
-
-  //   try {
-  //     const categoryData = {
-  //       // Always include these fields
-  //       name: name.trim(),
-  //       description: description.trim(),
-  //       availability,
-  //       availableAfterTime: availability === 'time-based' ? availableAfterTime : null,
-  //       availableFromTime: availability === 'time-range' ? availableFromTime : null,
-  //       availableToTime: availability === 'time-range' ? availableToTime : null,
-  //       active,
-  //       restaurantId,
-  //       imageFiles,
-  //       imagesToRemove,
-        
-  //       // Include edit-specific data
-  //       ...(isEditMode && initialData && { 
-  //         _id: initialData._id, // Send the category ID for editing
-  //         existingImages // Send current existing images
-  //       })
-  //     };
-
-  //     // Send data back to parent component
-  //     onSuccess(categoryData);
-  //   } catch (error) {
-  //     setError(error.message || 'An error occurred while preparing the category data');
-  //   }
-  // };
   const handleSubmit = (event) => {
-  event.preventDefault();
-  setError(null);
-  
-  if (!name.trim()) {
-    setError('Category name is required');
-    return;
-  }
-
-  // Validate time range
-  if (availability === 'time-range') {
-    if (!availableFromTime || !availableToTime) {
-      setError('Both start time and end time are required for time range availability');
-      return;
-    }
-    if (availableFromTime >= availableToTime) {
-      setError('End time must be after start time');
-      return;
-    }
-  }
-
-  // Validate time-based
-  if (availability === 'time-based' && !availableAfterTime) {
-    setError('Available after time is required for time-based availability');
-    return;
-  }
-
-  try {
-    const categoryData = {
-      // Always include these fields
-      name: name.trim(),
-      description: description.trim(),
-      availability,
-      active,
-      restaurantId,
-      imageFiles,
-      imagesToRemove,
-      
-      // Include time-specific fields based on availability
-      ...(availability === 'time-based' && { 
-        availableAfterTime,
-        availableFromTime: null,
-        availableToTime: null
-      }),
-      ...(availability === 'time-range' && { 
-        availableFromTime,
-        availableToTime,
-        availableAfterTime: null
-      }),
-      ...(availability === 'always' && {
-        availableAfterTime: null,
-        availableFromTime: null,
-        availableToTime: null
-      }),
-      ...(availability === 'disabled' && {
-        availableAfterTime: null,
-        availableFromTime: null,
-        availableToTime: null
-      }),
-      
-      // Include edit-specific data
-      ...(isEditMode && initialData && { 
-        _id: initialData._id, // Send the category ID for editing
-        existingImages // Send current existing images
-      })
-    };
-
-    console.log('Sending category data:', categoryData); // DEBUG LOG
+    event.preventDefault();
+    setError(null);
     
-    // Send data back to parent component
-    onSuccess(categoryData);
-  } catch (error) {
-    setError(error.message || 'An error occurred while preparing the category data');
-  }
-};
+    if (!name.trim()) {
+      setError('Category name is required');
+      return;
+    }
+
+    // Validate time range
+    if (availability === 'time-range') {
+      if (!availableFromTime || !availableToTime) {
+        setError('Both start time and end time are required for time range availability');
+        return;
+      }
+      if (availableFromTime >= availableToTime) {
+        setError('End time must be after start time');
+        return;
+      }
+    }
+
+    // Validate time-based
+    if (availability === 'time-based' && !availableAfterTime) {
+      setError('Available after time is required for time-based availability');
+      return;
+    }
+
+    try {
+      const categoryData = {
+        // Always include these fields
+        name: name.trim(),
+        description: description.trim(),
+        availability,
+        availableAfterTime: availability === 'time-based' ? availableAfterTime : null,
+        availableFromTime: availability === 'time-range' ? availableFromTime : null,
+        availableToTime: availability === 'time-range' ? availableToTime : null,
+        active,
+        restaurantId,
+        imageFiles,
+        imagesToRemove,
+        
+        // Include edit-specific data
+        ...(isEditMode && initialData && { 
+          _id: initialData._id, // Send the category ID for editing
+          existingImages // Send current existing images
+        })
+      };
+
+      // Send data back to parent component
+      onSuccess(categoryData);
+    } catch (error) {
+      setError(error.message || 'An error occurred while preparing the category data');
+    }
+  };
+
   const handleImageChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length + imageFiles.length + existingImages.length - imagesToRemove.length > 8) {

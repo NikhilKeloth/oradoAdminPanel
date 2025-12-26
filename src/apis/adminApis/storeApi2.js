@@ -3,7 +3,12 @@ import apiClient from "../apiClient/apiClient";
 export const fetchRestaurantCategories = async (restaurantId) => {
   try {
     const response = await apiClient.get(`/admin/restaurant/${restaurantId}/category`);
-    return response.data.data;
+    // return response.data.data;
+
+    return {
+      categories: response.data.data, // Array of categories
+      mainProducts: response.data.mainProducts || []  // Array of main products
+    };
   } catch (error) {
     console.error("Error fetching restaurant categories:", error.response?.data?.message || error.message);
     throw error;
@@ -110,6 +115,75 @@ export const getStoreById = async (id) => {
 
 
 
+// export const createProduct = async (productData, storeId, categoryId) => {
+//   try {
+//     const formData = new FormData();
+    
+//     // Log for debugging
+//     console.log('Raw productData:', productData);
+//     console.log('Images array:', productData.images);
+
+//     // Append all basic product data
+//     formData.append('name', productData.name);
+//     formData.append('description', productData.description || '');
+//     formData.append('price', productData.price);
+//     formData.append('storeId', storeId);
+//     formData.append('categoryId', categoryId);
+//     formData.append('preparationTime', productData.preparationTime || 10);
+//     formData.append('availability', productData.availability || 'always');
+    
+//     // Append time fields based on availability type
+//     if (productData.availableAfterTime) {
+//       formData.append('availableAfterTime', productData.availableAfterTime);
+//     }
+//     if (productData.availableFromTime) {
+//       formData.append('availableFromTime', productData.availableFromTime);
+//     }
+//     if (productData.availableToTime) {
+//       formData.append('availableToTime', productData.availableToTime);
+//     }
+    
+//     formData.append('unit', productData.unit || 'piece');
+//     formData.append('stock', productData.stock || 0);
+//     formData.append('reorderLevel', productData.reorderLevel || 0);
+//     formData.append('enableInventory', productData.enableInventory || false);
+//     formData.append('foodType', productData.foodType || 'veg');
+//     formData.append('costPrice', productData.costPrice || 0);
+//     formData.append('minimumOrderQuantity', productData.minOrderQty || productData.minQty || 1);
+//     formData.append('maximumOrderQuantity', productData.maxOrderQty || productData.maxQty || 100);
+//     formData.append('active', productData.active !== undefined ? productData.active : true);
+
+//     // Handle image uploads
+//     if (productData.images && productData.images.length > 0) {
+//       productData.images.forEach((image, index) => {
+//         if (image instanceof File) {
+//           formData.append(`images`, image);
+//         } else if (typeof image === 'string') {
+//           console.warn('Skipping existing image URL - only new uploads are supported for creation');
+//         }
+//       });
+//     } else {
+//       console.log('No images to upload');
+//     }
+
+//     // Log FormData contents for debugging
+//     for (let [key, value] of formData.entries()) {
+//       console.log(key, value instanceof File ? value.name : value);
+//     }
+
+//     const response = await apiClient.post('/store/product', formData, {
+//       headers: {
+//         'Content-Type': 'multipart/form-data'
+//       }
+//     });
+
+//     return response.data;
+//   } catch (error) {
+//     console.error('Create product failed:', error.response?.data || error.message);
+//     throw error;
+//   }
+// };
+
 export const createProduct = async (productData, storeId, categoryId) => {
   try {
     const formData = new FormData();
@@ -117,13 +191,23 @@ export const createProduct = async (productData, storeId, categoryId) => {
     // Log for debugging
     console.log('Raw productData:', productData);
     console.log('Images array:', productData.images);
+    console.log('Image types:', productData.images?.map(img => ({
+      type: typeof img,
+      isFile: img instanceof File,
+      constructor: img?.constructor?.name
+    })));
 
     // Append all basic product data
     formData.append('name', productData.name);
     formData.append('description', productData.description || '');
     formData.append('price', productData.price);
     formData.append('storeId', storeId);
-    formData.append('categoryId', categoryId);
+    
+    // Handle categoryId - could be null for main products
+    if (categoryId) {
+      formData.append('categoryId', categoryId);
+    }
+    
     formData.append('preparationTime', productData.preparationTime || 10);
     formData.append('availability', productData.availability || 'always');
     
@@ -148,13 +232,16 @@ export const createProduct = async (productData, storeId, categoryId) => {
     formData.append('maximumOrderQuantity', productData.maxOrderQty || productData.maxQty || 100);
     formData.append('active', productData.active !== undefined ? productData.active : true);
 
-    // Handle image uploads
+    // ✅ FIXED: Handle image uploads correctly
     if (productData.images && productData.images.length > 0) {
       productData.images.forEach((image, index) => {
         if (image instanceof File) {
+          // Append File objects
           formData.append(`images`, image);
+          console.log(`Appended image file: ${image.name}`);
         } else if (typeof image === 'string') {
-          console.warn('Skipping existing image URL - only new uploads are supported for creation');
+          // For creation, skip URLs (they should be uploaded files)
+          console.warn('Skipping existing image URL during creation:', image);
         }
       });
     } else {
@@ -162,8 +249,9 @@ export const createProduct = async (productData, storeId, categoryId) => {
     }
 
     // Log FormData contents for debugging
+    console.log('FormData contents:');
     for (let [key, value] of formData.entries()) {
-      console.log(key, value instanceof File ? value.name : value);
+      console.log(key, value instanceof File ? `${value.name} (File)` : value);
     }
 
     const response = await apiClient.post('/store/product', formData, {
@@ -298,7 +386,16 @@ export const createCategory = async (categoryData, imageFiles = []) => {
     if (categoryData.name) formData.append('name', categoryData.name);
     if (categoryData.restaurantId) formData.append('restaurantId', categoryData.restaurantId);
     if (categoryData.availability) formData.append('availability', categoryData.availability);
-    if (categoryData.availableAfterTime) formData.append('availableAfterTime', categoryData.availableAfterTime);
+    // if (categoryData.availableAfterTime) formData.append('availableAfterTime', categoryData.availableAfterTime);
+
+    if (categoryData.availability === 'time-based' && categoryData.availableAfterTime) {
+      formData.append('availableAfterTime', categoryData.availableAfterTime);
+    } 
+    else if (categoryData.availability === 'time-range') {
+      // CRITICAL: Add these two lines for time-range
+      if (categoryData.availableFromTime) formData.append('availableFromTime', categoryData.availableFromTime);
+      if (categoryData.availableToTime) formData.append('availableToTime', categoryData.availableToTime);
+    }
     if (categoryData.description) formData.append('description', categoryData.description);
     formData.append('active', categoryData.active);
     formData.append('autoOnOff', categoryData.autoOnOff);
@@ -393,58 +490,85 @@ export const toggleCategoryActiveStatus = async (id, categoryData, imagesToRemov
 };  
 
 
+// export const updateCategory = async (id, categoryData, imagesToRemove = [], newImages = []) => {
+//   const formData = new FormData();
+
+//   // Add ALL basic fields - not just name and description
+//   if (categoryData.name) formData.append('name', categoryData.name);
+//   if (categoryData.description) formData.append('description', categoryData.description);
+//   if (categoryData.availability) formData.append('availability', categoryData.availability);
+//   if (categoryData.restaurantId) formData.append('restaurantId', categoryData.restaurantId);
+  
+//   // Add time fields based on availability
+//   if (categoryData.availableAfterTime) formData.append('availableAfterTime', categoryData.availableAfterTime);
+//   if (categoryData.availableFromTime) formData.append('availableFromTime', categoryData.availableFromTime);
+//   if (categoryData.availableToTime) formData.append('availableToTime', categoryData.availableToTime);
+  
+//   // Add boolean fields
+//   formData.append('active', categoryData.active);
+//   formData.append('autoOnOff', categoryData.autoOnOff || false);
+
+//   // Add imagesToRemove (as JSON string)
+//   if (imagesToRemove.length > 0) {
+//     formData.append('imagesToRemove', JSON.stringify(imagesToRemove));
+//   }
+
+//   // Append new images (files)
+//   newImages.forEach((imageFile) => {
+//     formData.append('images', imageFile);
+//   });
+
+//   console.log("Sending FormData with fields:", {
+//     name: categoryData.name,
+//     description: categoryData.description,
+//     availability: categoryData.availability,
+//     active: categoryData.active,
+//     autoOnOff: categoryData.autoOnOff,
+//     availableAfterTime: categoryData.availableAfterTime,
+//     availableFromTime: categoryData.availableFromTime,
+//     availableToTime: categoryData.availableToTime,
+//     imagesToRemoveCount: imagesToRemove.length,
+//     newImagesCount: newImages.length
+//   });
+
+//   // Send PATCH request
+//   const response = await apiClient.patch(`/store/category/${id}`, formData, {
+//     headers: {
+//       'Content-Type': 'multipart/form-data',
+//     },
+//   });
+
+//   return response.data;
+// };
+
 export const updateCategory = async (id, categoryData, imagesToRemove = [], newImages = []) => {
   const formData = new FormData();
-
-  // Add ALL basic fields - not just name and description
+  // Add text fields
   if (categoryData.name) formData.append('name', categoryData.name);
   if (categoryData.description) formData.append('description', categoryData.description);
   if (categoryData.availability) formData.append('availability', categoryData.availability);
   if (categoryData.restaurantId) formData.append('restaurantId', categoryData.restaurantId);
-  
-  // Add time fields based on availability
   if (categoryData.availableAfterTime) formData.append('availableAfterTime', categoryData.availableAfterTime);
   if (categoryData.availableFromTime) formData.append('availableFromTime', categoryData.availableFromTime);
   if (categoryData.availableToTime) formData.append('availableToTime', categoryData.availableToTime);
-  
-  // Add boolean fields
   formData.append('active', categoryData.active);
   formData.append('autoOnOff', categoryData.autoOnOff || false);
 
-  // Add imagesToRemove (as JSON string)
+  // Add imagesToRemove as JSON
   if (imagesToRemove.length > 0) {
     formData.append('imagesToRemove', JSON.stringify(imagesToRemove));
   }
 
-  // Append new images (files)
-  newImages.forEach((imageFile) => {
-    formData.append('images', imageFile);
-  });
+  // Add new image files
+  newImages.forEach(file => formData.append('images', file));
 
-  console.log("Sending FormData with fields:", {
-    name: categoryData.name,
-    description: categoryData.description,
-    availability: categoryData.availability,
-    active: categoryData.active,
-    autoOnOff: categoryData.autoOnOff,
-    availableAfterTime: categoryData.availableAfterTime,
-    availableFromTime: categoryData.availableFromTime,
-    availableToTime: categoryData.availableToTime,
-    imagesToRemoveCount: imagesToRemove.length,
-    newImagesCount: newImages.length
-  });
-
-  // Send PATCH request
   const response = await apiClient.patch(`/store/category/${id}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-
   return response.data;
 };
-
-
 
 
 
@@ -698,6 +822,239 @@ export const unarchiveProduct = async (productId) => {
     return res.data;
   } catch (error) {
     console.error("Error unarchiving product:", error);
+    throw error;
+  }
+};
+
+export const fetchSubCategories = async (categoryId) => {
+  try {
+    const response = await api.get(`/sub-categories/category/${categoryId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching sub-categories:', error);
+    throw error;
+  }
+};
+
+export const createSubCategory = async (subCategoryData) => {
+  try {
+    const formData = new FormData();
+    
+    // Append basic data
+    formData.append('name', subCategoryData.name);
+    formData.append('description', subCategoryData.description || '');
+    formData.append('availability', subCategoryData.availability || 'always');
+    formData.append('active', subCategoryData.active);
+    formData.append('restaurantId', subCategoryData.restaurantId);
+    formData.append('categoryId', subCategoryData.categoryId);
+    
+    // Append availability times based on type
+    if (subCategoryData.availability === 'time-based') {
+      formData.append('availableAfterTime', subCategoryData.availableAfterTime || '');
+    } else if (subCategoryData.availability === 'time-range') {
+      formData.append('availableFromTime', subCategoryData.availableFromTime || '');
+      formData.append('availableToTime', subCategoryData.availableToTime || '');
+    }
+    
+    // Append image files
+    if (subCategoryData.imageFiles && subCategoryData.imageFiles.length > 0) {
+      subCategoryData.imageFiles.forEach((file, index) => {
+        formData.append('images', file);
+      });
+    }
+    
+    const response = await api.post('/sub-categories', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating sub-category:', error);
+    throw error;
+  }
+};
+
+export const updateSubCategory = async (subCategoryId, subCategoryData, imagesToRemove = [], imageFiles = []) => {
+  try {
+    const formData = new FormData();
+    
+    // Append basic data
+    Object.keys(subCategoryData).forEach(key => {
+      if (subCategoryData[key] !== undefined && subCategoryData[key] !== null) {
+        formData.append(key, subCategoryData[key]);
+      }
+    });
+    
+    // Append images to remove
+    imagesToRemove.forEach(img => {
+      formData.append('imagesToRemove', img);
+    });
+    
+    // Append new image files
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+    
+    const response = await api.put(`/sub-categories/${subCategoryId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating sub-category:', error);
+    throw error;
+  }
+};
+
+export const deleteSubCategory = async (subCategoryId) => {
+  try {
+    const response = await api.delete(`/sub-categories/${subCategoryId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting sub-category:', error);
+    throw error;
+  }
+};
+
+export const toggleSubCategoryStatus = async (subCategoryId) => {
+  try {
+    const response = await api.patch(`/sub-categories/${subCategoryId}/toggle-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling sub-category status:', error);
+    throw error;
+  }
+};
+
+export const archiveSubCategory = async (subCategoryId) => {
+  try {
+    const response = await api.patch(`/sub-categories/${subCategoryId}/archive`);
+    return response.data;
+  } catch (error) {
+    console.error('Error archiving sub-category:', error);
+    throw error;
+  }
+};
+
+export const unarchiveSubCategory = async (subCategoryId) => {
+  try {
+    const response = await api.patch(`/sub-categories/${subCategoryId}/unarchive`);
+    return response.data;
+  } catch (error) {
+    console.error('Error unarchiving sub-category:', error);
+    throw error;
+  }
+};
+
+// export const createNestedCategories = async (restaurantId, nestedData) => {
+//   try {
+//     console.log("🚀 Sending to /admin/restaurant/${restaurantId}/categories/nested");
+//     console.log("📤 Payload:", JSON.stringify(nestedData, null, 2));
+    
+//     // Validate the structure
+//     if (!nestedData || !nestedData.levels || !Array.isArray(nestedData.levels)) {
+//       console.error("❌ Invalid nestedData structure:", nestedData);
+//       throw new Error("Invalid data structure: missing levels array");
+//     }
+    
+//     // Send EXACTLY what backend expects
+//     const response = await apiClient.post(
+//       `/admin/restaurant/${restaurantId}/categories/nested`, 
+//       {
+//         levels: nestedData.levels,
+//         initialParentId: nestedData.initialParentId || null
+//       }
+//     );
+    
+//     console.log("✅ Response:", response.data);
+//     return response.data;
+    
+//   } catch (error) {
+//     console.error("❌ API Error Details:");
+//     console.error("- URL:", error.config?.url);
+//     console.error("- Method:", error.config?.method);
+//     console.error("- Data:", error.config?.data);
+//     console.error("- Response:", error.response?.data);
+//     console.error("- Status:", error.response?.status);
+//     throw error;
+//   }
+// };
+
+
+// export const createNestedCategories = async (restaurantId, formData) => {
+//   try {
+//     console.log("🚀 Sending FormData to /admin/restaurant/${restaurantId}/categories/nested");
+    
+//     // Check if it's FormData or regular object
+//     const isFormData = formData instanceof FormData;
+    
+//     let response;
+//     if (isFormData) {
+//       // For FormData upload with images
+//       response = await apiClient.post(
+//         `/admin/restaurant/${restaurantId}/categories/nested`,
+//         formData,
+//         {
+//           headers: {
+//             'Content-Type': 'multipart/form-data',
+//           },
+//         }
+//       );
+//     } else {
+//       // For backward compatibility - JSON without images
+//       console.log("📤 JSON Payload:", JSON.stringify(formData, null, 2));
+      
+//       if (!formData || !formData.levels || !Array.isArray(formData.levels)) {
+//         console.error("❌ Invalid nestedData structure:", formData);
+//         throw new Error("Invalid data structure: missing levels array");
+//       }
+      
+//       response = await apiClient.post(
+//         `/admin/restaurant/${restaurantId}/categories/nested`, 
+//         {
+//           levels: formData.levels,
+//           initialParentId: formData.initialParentId || null
+//         }
+//       );
+//     }
+    
+//     console.log("✅ Response:", response.data);
+//     return response.data;
+    
+//   } catch (error) {
+//     console.error("❌ API Error Details:");
+//     console.error("- URL:", error.config?.url);
+//     console.error("- Method:", error.config?.method);
+//     console.error("- Data:", error.config?.data);
+//     console.error("- Response:", error.response?.data);
+//     console.error("- Status:", error.response?.status);
+//     throw error;
+//   }
+// };
+
+
+// storeApi2.js
+export const createNestedCategories = async (restaurantId, formData) => {
+  try {
+    console.log("🚀 Uploading subcategory with images...");
+    
+    const response = await apiClient.post(
+      `/admin/restaurant/${restaurantId}/categories/nested`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    
+    console.log("✅ Subcategory created:", response.data);
+    return response.data;
+    
+  } catch (error) {
+    console.error("❌ Error creating subcategory:", error);
     throw error;
   }
 };

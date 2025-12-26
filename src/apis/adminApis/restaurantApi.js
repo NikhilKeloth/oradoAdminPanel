@@ -54,3 +54,50 @@ export const updateOpeningHours = async (restaurantId, openingHoursData) => {
     throw error;
   }
 };
+
+// In restaurantApi.js - ADD THESE FUNCTIONS:
+
+// Get business hours
+export const getBusinessHours = async (restaurantId) => {
+  try {
+    const response = await apiClient.get(
+      `/admin/restaurant/${restaurantId}/business-hours`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching business hours:", error);
+    throw error;
+  }
+};
+
+// Update business hours
+export const updateBusinessHours = async (restaurantId, businessHoursData) => {
+  try {
+    const response = await apiClient.put(
+      `/admin/restaurant/${restaurantId}/business-hours`,
+      { businessHours: businessHoursData }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating business hours:", error);
+    throw error;
+  }
+};
+
+export const updateOrderSettings = async (merchantId, data) => {
+  try {
+    const response = await apiClient.patch(`/admin/restaurant/${merchantId}/order-settings`, data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getOrderSettings = async (merchantId) => {
+  try {
+    const response = await apiClient.get(`/admin/restaurant/${merchantId}/order-settings`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

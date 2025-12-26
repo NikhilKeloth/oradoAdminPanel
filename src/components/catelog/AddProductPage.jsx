@@ -357,7 +357,7 @@ const handleSubmit = async (e) => {
                         Price <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-4 top-3.5 text-gray-500 font-medium">$</span>
+                        <span className="absolute left-4 top-3.5 text-gray-500 font-medium">₹</span>
                         <input
                           type="number"
                           name="price"
@@ -408,7 +408,7 @@ const handleSubmit = async (e) => {
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-gray-700">Cost Price</label>
                       <div className="relative">
-                        <span className="absolute left-4 top-3.5 text-gray-500 font-medium">$</span>
+                        <span className="absolute left-4 top-3.5 text-gray-500 font-medium">₹</span>
                         <input
                           type="number"
                           name="costPrice"
